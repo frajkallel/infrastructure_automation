@@ -1,0 +1,91 @@
+- name: Get plugin group replication status
+  command: mysql -Ns -e"SELECT PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME='group_replication'"
+  register: check_plugin_mgr_status
+
+- block:
+  - name: proxysql monitor mysql account
+    mysql_user:
+      name: "{{ proxy_monitor_user }}"
+      password: "{{ proxy_monitor_pwd }}"
+      host: "%"
+      priv: "sys.*:SELECT"
+      state: present
+
+  - name: proxysql app mysql account
+    mysql_user:
+      name: "{{ proxy_app_user }}"
+      password: "{{ proxy_app_pwd }}"
+      host: "%"
+      priv: '*.*:ALL,GRANT'
+      state: present
+
+  - name: group replication mysql account
+    mysql_user:
+      name: "{{ group_replication_user }}"
+      password: "{{ group_replication_passwd }}"
+      host: "%"
+      priv: '*.*:REPLICATION SLAVE'
+      state: present
+
+  - name: nagios mysql account
+    mysql_user:
+      name: "{{ nagios_username }}"
+      password: "{{ nagios_pwd }}"
+      priv: "*.*:USAGE,REPLICATION CLIENT,PROCESS"
+      state: present
+
+  - name: create config file group replication
+    template: src=../templates/gr.cnf dest=/etc/mysql/mysql.conf.d/gr.cnf mode=0644 owner=root group=root
+
+  - name: Restart service Mysql
+    service:
+      name: mysql
+      state: restarted
+
+  - name: create sql file for group replication
+    template: src=../templates/init.sql.j2 dest=/tmp/init.sql
+
+  - name: Import init.sql
+    mysql_db:
+      state: import
+      name: all
+      target: /tmp/init.sql
+
+  - name: Copy sql script add_sys.sql
+    copy: src=../files/add_sys.sql dest=/tmp/add_sys.sql
+    tags:
+      - boot
+
+  - name: Import add_sys files
+    mysql_db:
+      state: import
+      name: all
+      target: /tmp/add_sys.sql
+    tags:
+      - boot
+
+  - name: Copy sql script for boot First Node
+    copy: src=../files/bootstrap_first_node.sql dest=/tmp/bootstrap_first_node.sql
+
+  - name: Boot First Node
+    mysql_db:
+      state: import
+      name: all
+      target: /tmp/bootstrap_first_node.sql
+    run_once: true
+    when: node_server_id == 1
+    tags:
+      - boot
+
+  - name: Copy sql script for start other Nodes
+    copy: src=../files/start_replication_other_node.sql dest=/tmp/start_replication_other_node.sql
+
+  - name: Start replication for other Nodes
+    mysql_db:
+      state: import
+      name: all
+      target: /tmp/start_replication_other_node.sql
+    when: node_server_id != 1
+    tags:
+      - boot
+  when: check_plugin_mgr_status.stdout != "ACTIVE"

@@ -1,0 +1,8 @@
+#config backend mysql server
+
+#config mysql group replication
+insert into mysql_group_replication_hostgroups (writer_hostgroup,backup_writer_hostgroup,reader_hostgroup,offline_hostgroup,active,max_writers,writer_is_also_reader,max_transactions_behind) values (2,4,3,1,1,1,0,100);
+
+#save config
+save mysql servers to disk;
+load mysql servers to runtime;

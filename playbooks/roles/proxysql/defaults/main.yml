@@ -1,0 +1,7 @@
+url_proxysql_package: https://github.com/sysown/proxysql/releases/download/v1.4.6/proxysql_1.4.6-ubuntu16_amd64.deb
+proxy_app_user: papp_user
+proxy_app_pwd: papp_pwd
+proxy_monitor_pwd: pmonit_pwd
+proxy_monitor_user: pmonit_user
+proxy_admin_user: admin
+proxy_admin_pwd: admin

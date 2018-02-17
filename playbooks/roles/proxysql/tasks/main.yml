@@ -1,0 +1,86 @@
+---
+- name: Download package proxysql
+  get_url:
+    url: "{{ url_proxysql_package }}"
+    dest: /tmp/proxysql_1.4.6-ubuntu16_amd64.deb
+
+- name: Install Mysql client
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - mysql-client
+    - python-mysqldb
+
+- name: Install a .deb package
+  apt:
+    deb: /tmp/proxysql_1.4.6-ubuntu16_amd64.deb
+
+- name: Start service proxysql
+  service:
+    name: proxysql
+    state: started
+
+- name: Wait for connection
+  wait_for: port=6032 host=localhost
+
+
+- name: Add Mysql backend servers
+  proxysql_backend_servers:
+    login_user: "{{ proxy_admin_user }}"
+    login_password: "{{ proxy_admin_pwd }}"
+    hostname: "{{ hostvars[item].ansible_ssh_host }}"
+    state: present
+    hostgroup_id: 2
+  with_items: "{{ groups['mysql'] }}"
+
+- name: create cluster config sql file
+  template: src=../templates/cluster_config.sql.j2 dest=/tmp/cluster_config.sql
+
+- name: Import cluster config file
+  command: mysql -u{{ proxy_admin_user }} -p{{ proxy_admin_pwd }} -P6032 -h127.0.0.1  -e "source /tmp/cluster_config.sql;"
+  ignore_errors: yes
+  tags:
+    - pconfig
+
+- name: Add application user
+  proxysql_mysql_users:
+    login_user: "{{ proxy_admin_user }}"
+    login_password: "{{ proxy_admin_pwd }}"
+    backend: False
+    username: '{{ proxy_app_user }}'
+    password: '{{ proxy_app_pwd }}'
+    default_hostgroup: 2
+    state: present
+
+- name: update login monitor
+  proxysql_global_variables:
+    login_user: "{{ proxy_admin_user }}"
+    login_password: "{{ proxy_admin_pwd }}"
+    variable: 'mysql-monitor_username'
+    value: "{{ proxy_monitor_user }}"
+
+- name: update password monitor
+  proxysql_global_variables:
+    login_user: "{{ proxy_admin_user }}"
+    login_password: "{{ proxy_admin_pwd }}"
+    variable: 'mysql-monitor_password'
+    value: "{{ proxy_monitor_pwd }}"
+
+- name: Setup mysql rules select for update
+  proxysql_query_rules:
+    login_user: "{{ proxy_admin_user }}"
+    login_password: "{{ proxy_admin_pwd }}"
+    destination_hostgroup: 2
+    active: 1
+    state: present
+    match_pattern: "^SELECT .* FOR UPDATE"
+    apply: 1
+
+- name: Setup mysql rules seect
+  proxysql_query_rules:
+    login_user: "{{ proxy_admin_user }}"
+    login_password: "{{ proxy_admin_pwd }}"
+    destination_hostgroup: 3
+    active: 1
+    state: present
+    match_pattern: "^SELECT "
+    apply: 1

@@ -1,0 +1,25 @@
+- name: stop service Mysql
+  service:
+    name: mysql
+    state: stopped
+  ignore_errors: yes
+
+- name: Remove files from datadir
+  shell: rm -Rf {{ mysql_data_dir }}/*
+  ignore_errors: yes
+
+- name: Remove config files
+  shell: rm -Rf /etc/mysql/mysql.conf.d/gr.cnf
+  ignore_errors: yes
+
+- name: start service Mysql
+  service:
+    name: mysql
+    state: started
+  ignore_errors: yes
+
+- name: Wait for port 3306 to become open
+  wait_for:
+    port: 3306
+    state: started
+  ignore_errors: yes

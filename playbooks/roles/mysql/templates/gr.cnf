@@ -1,0 +1,21 @@
+[mysqld]
+server_id={{ node_server_id }}
+gtid_mode=ON
+enforce_gtid_consistency=ON
+master_info_repository=TABLE
+relay_log_info_repository=TABLE
+binlog_checksum=NONE
+log_slave_updates=ON
+log_bin=binlog
+binlog_format=ROW
+disabled_storage_engines="MyISAM,BLACKHOLE,FEDERATED,ARCHIVE"
+
+#### Group Replication specific options
+transaction_write_set_extraction=XXHASH64
+loose-group_replication_group_name="fe94b429-481f-4f58-845a-639acd9c215f"
+loose-group_replication_start_on_boot=OFF
+loose-group_replication_bootstrap_group=OFF
+#loose-group_replication_single_primary_mode=FALSE
+#loose-group_replication_enforce_update_everywhere_checks=TRUE
+loose-group_replication_local_address="{{ ansible_ssh_host }}:{{ gr_port }}"
+loose-group_replication_group_seeds="{% for host in groups['mysql'] %}{{ hostvars[host].ansible_ssh_host }}:{{ gr_port }}{% if not loop.last %},{% endif %}{% endfor %}"
