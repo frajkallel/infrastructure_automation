@@ -1,2 +1,15 @@
 ---
+gr_port: 4406
 mysql_service: mysql
+mysql_root_db_pass: root_passwd
+group_replication_user: repl
+group_replication_passwd: repl_passwd
+mysql_group_replication_deployment: false
+mysql_data_dir: /var/lib/mysql
+mgr_full_reset: false
+nagios_username: nagios_user
+nagios_pwd: nagios_pwd
+proxy_app_user: papp_user
+proxy_app_pwd: papp_pwd
+proxy_monitor_pwd: pmonitor
+proxy_monitor_user: pmonitor

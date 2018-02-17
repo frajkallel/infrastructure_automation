@@ -1,8 +1,10 @@
 ---
+- include: full_reset.yml
+  when: mgr_full_reset
+
 - name: Install a apt mysql.deb package from the internet.
   apt:
     deb: https://repo.mysql.com//mysql-apt-config_0.8.8-1_all.deb
-  become: yes
 
 - name: Install mysql
   apt: name={{ item }} state=installed update_cache=yes
@@ -10,23 +12,18 @@
     - mysql-server
     - mysql-client
     - python-mysqldb
-  become: yes
 
 - name: start service mysql
   service: name={{ mysql_service }} state=started enabled=yes
-  become: yes
 
 - name: Create my.cnf
   template: src=../templates/my.cnf.j2 dest=/root/.my.cnf
-  become: yes
 
 - name: ensure anonymous users are not in the database
   mysql_user: name='' host_all=yes state=absent
-  become: yes
 
 - name: Remove test database
   mysql_db: name=test state=absent
-  become: yes
 
 - name: update mysql root password for all root accounts
   mysql_user: name=root host={{ item }} password="{{ mysql_root_db_pass }}"
@@ -35,11 +32,15 @@
    - 127.0.0.1
    - ::1
    - localhost
-  become: yes
 
+- name: Copy Mysql config
+  copy: src=../files/mysqld.cnf dest=/etc/mysql/mysql.conf.d/mysqld.cnf mode=0644 owner=root group=root
 
 - name: Restart service Mysql
   service:
     name: mysql
     state: restarted
-  become: yes
+  when: not mysql_group_replication_deployment
+
+- include: mgr.yml
+  when: mysql_group_replication_deployment
