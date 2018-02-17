@@ -1,0 +1,45 @@
+---
+- name: Install a apt mysql.deb package from the internet.
+  apt:
+    deb: https://repo.mysql.com//mysql-apt-config_0.8.8-1_all.deb
+  become: yes
+
+- name: Install mysql
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - mysql-server
+    - mysql-client
+    - python-mysqldb
+  become: yes
+
+- name: start service mysql
+  service: name={{ mysql_service }} state=started enabled=yes
+  become: yes
+
+- name: Create my.cnf
+  template: src=../templates/my.cnf.j2 dest=/root/.my.cnf
+  become: yes
+
+- name: ensure anonymous users are not in the database
+  mysql_user: name='' host_all=yes state=absent
+  become: yes
+
+- name: Remove test database
+  mysql_db: name=test state=absent
+  become: yes
+
+- name: update mysql root password for all root accounts
+  mysql_user: name=root host={{ item }} password="{{ mysql_root_db_pass }}"
+  with_items:
+   - "{{ ansible_hostname }}"
+   - 127.0.0.1
+   - ::1
+   - localhost
+  become: yes
+
+
+- name: Restart service Mysql
+  service:
+    name: mysql
+    state: restarted
+  become: yes

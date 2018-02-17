@@ -1,0 +1,28 @@
+---
+- name: Install apache2
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - apache2
+    - apache2-utils
+  become: yes
+
+- name: Add ServerName in conf apache
+  lineinfile: path=/etc/apache2/apache2.conf line="{{ item.name }} {{ item.value }}" 
+  with_items:
+    - name: ServerName
+      value: "{{ ansible_hostname }}"
+  become: yes
+
+- name: Update dir.conf
+  copy:
+    src: files/dir.conf
+    dest: /etc/apache2/mods-enabled/dir.conf
+    owner: root
+    group: root
+  become: yes
+
+- name: Restart apache2
+  service:
+    name: apache2
+    state: restarted
+  become: yes

@@ -1,0 +1,5 @@
+opendkim_domain:
+  - example.lan
+  - hello.com
+
+

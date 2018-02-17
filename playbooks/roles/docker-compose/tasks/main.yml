@@ -1,0 +1,21 @@
+---
+- name: Download the latest version of Docker Compose
+  shell: curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-{{ ansible_system }}-{{ ansible_architecture }} -o /usr/local/bin/docker-compose 
+  become: yes
+
+- name: Apply executable permissions to the binary
+  file:
+    path: /usr/local/bin/docker-compose
+    owner: root
+    group: root
+    mode: 0744
+  become: yes
+
+- name: Run docker-compose command
+  shell: docker-compose --version
+  register: result
+  become: yes
+
+- fail:
+    msg: "There is a problem with docker-compose"
+  when: result|failed

@@ -1,0 +1,12 @@
+- name: install docker
+  hosts: prod
+  roles:
+    - munin-node
+
+  #tasks:
+  #  - name: Install zenity
+  #    shell:   echo "{{ansible_fqdn}} done" >> /tmp/list
+  #  - name: Tell Master
+  #    remote_user: vagrant
+  #    shell:  echo "{{ansible_fqdn}} done" >> /tmp/list
+  #    delegate_to: 192.168.100.12

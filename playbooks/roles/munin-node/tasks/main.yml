@@ -1,0 +1,42 @@
+---
+- name: Install package munin-node
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - munin-node 
+    - munin-plugins-extra
+  become: yes
+
+- name: configure munin-node.conf
+  template:
+    src: templates/munin-node.conf
+    dest: /etc/munin/munin-node.conf
+  become: yes
+
+- name: Restart munin-node
+  service:
+    name: munin-node
+    state: restarted
+  become: yes
+
+# for delegate_to your PC must have access to IP to delegate
+- name: Add host to munin master
+  remote_user: vagrant
+  blockinfile:
+    dest: /etc/munin/munin.conf
+    block: |
+      [{{ env }}; {{ ansible_hostname }}]
+        address {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}
+        use_node_name yes
+    marker: "# {mark} ANSIBLE MANAGED BLOCK {{ env }}; {{ ansible_hostname }}"
+    backup: yes
+  become: yes
+  delegate_to: "{{ ip_nagios }}"
+
+- name: Restart apache on munin master
+  remote_user: vagrant
+  service:
+    name: apache2
+    state: restarted
+  become: yes
+  delegate_to: "{{ ip_nagios }}"  
+

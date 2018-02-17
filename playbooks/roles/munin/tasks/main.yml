@@ -1,0 +1,56 @@
+---
+- name: Install package for munin
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - libcgi-fast-perl 
+    - libapache2-mod-fcgid
+    - munin 
+    - munin-node 
+    - munin-plugins-extra
+  become: yes
+
+- name: enable fcgid module
+  apache2_module:
+    state: present
+    name: fcgid
+  become: yes
+
+- name: update munin.conf
+  lineinfile:
+    path: /etc/munin/munin.conf
+    line: '{{ item.name }}   {{ item.value }}'
+    insertbefore: BOF
+  with_items:
+    - name: dbdir
+      value: "/var/lib/munin"
+    - name: htmldir
+      value: "/var/cache/munin/www"
+    - name: logdir
+      value: "/var/log/munin"
+    - name: rundir
+      value: "/var/run/munin"
+  become: yes
+
+- name: configure apache.conf for munin
+  copy:
+    src: files/apache.conf
+    dest: /etc/munin/apache.conf
+  become: yes
+
+- name: configure apache24.conf for munin
+  copy:
+    src: files/apache24.conf
+    dest: /etc/munin/apache24.conf
+  become: yes
+
+- name: Restart apache2
+  service:
+    name: apache2
+    state: restarted
+  become: yes
+
+- name: Restart munin-node
+  service:
+    name: munin-node
+    state: restarted
+  become: yes

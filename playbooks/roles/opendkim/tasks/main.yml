@@ -1,0 +1,91 @@
+---
+- name: Install opendkim
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - opendkim 
+    - opendkim-tools
+  become: yes
+
+- name: Update opendkim.conf file
+  copy:
+    src: files/opendkim.conf
+    dest: /etc/opendkim.conf
+  become: yes
+
+- name: update opendkim config file  
+  lineinfile:
+    path: /etc/default/opendkim
+    regexp: '^SOCKET='
+    line: 'SOCKET="inet:12301@localhost"'
+  become: yes
+
+- name: Add opendkim in postfix config
+  lineinfile: path=/etc/postfix/main.cf line="{{ item.name }} = {{ item.value }}" 
+  with_items:
+    - name: milter_protocol
+      value: "2"
+    - name: milter_default_action
+      value: "accept"
+    - name: smtpd_milters
+      value: "inet:localhost:12301"
+    - name: non_smtpd_milters
+      value: "inet:localhost:12301"
+  become: yes
+
+- name: create opendkim directorys 
+  file:
+    path: /etc/{{ item }}
+    state: directory
+    mode: 0755
+  with_items:
+    - opendkim
+    - opendkim/keys
+  become: yes
+
+- name: Create TrustedHost file
+  template:
+    src: templates/{{ item }}
+    dest: /etc/opendkim/{{ item }}
+    mode: 0644
+  with_items:
+    - TrustedHosts
+    - KeyTable
+    - SigningTable
+  become: yes
+
+- name: create a directory for the domain
+  file:
+    path: /etc/opendkim/keys/{{ item }}
+    state: directory
+    mode: 0600
+  with_items:
+    - "{{ opendkim_domain }}"
+  become: yes
+
+  #Download keys from git instead generate it
+- name: Generate the public and private keys
+  shell: cd /etc/opendkim/keys/{{ item }}; opendkim-genkey -s mail -d {{ item }} 
+  with_items:
+    - "{{ opendkim_domain }}"
+  become: yes
+
+- name: Change the owner of the private key to opendkim
+  file:
+    path: /etc/opendkim/keys/{{ item }}/mail.private
+    owner: opendkim
+    group: opendkim
+  with_items:
+    - "{{ opendkim_domain }}"
+  become: yes
+
+- name: Restart opendkim
+  service:
+    name: opendkim
+    state: restarted
+  become: yes
+
+- name: Restart postfix
+  service:
+    name: postfix
+    state: restarted
+  become: yes

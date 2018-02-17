@@ -1,0 +1,4 @@
+postfix_vars:
+  - { name: inet_interfaces, value: "loopback-only" }
+  - { name: mydestination, value: "$myhostname, localhost.$mydomain, $mydomain" }
+ops_team_email: frajkallel@yahoo.com

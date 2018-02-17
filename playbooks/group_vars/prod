@@ -1,0 +1,2 @@
+env: prod
+#mysql_root_db_pass: "{{ vault_mysql_root_db_pass }}"
