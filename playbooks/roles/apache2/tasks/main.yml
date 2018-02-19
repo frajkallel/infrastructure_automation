@@ -20,6 +20,7 @@
     owner: root
     group: root
   become: yes
+  when: apache2_for_php
 
 - name: Restart apache2
   service:

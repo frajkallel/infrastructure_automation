@@ -12,6 +12,29 @@
     - mysql-server
     - mysql-client
     - python-mysqldb
+    - python-pip
+    - libcache-cache-perl 
+    - libipc-sharelite-perl
+
+- name: install mycli
+  pip:
+    name: mycli
+
+#munin-node should be installed before 
+- name: Add plugins munin
+  file:
+    src: /usr/share/munin/plugins/{{ item }}
+    dest: /etc/munin/plugins/{{ item }}
+    state: link
+  become: yes
+  with_items:
+    - "{{ plugins_list }}"
+
+- name: Restart munin-node
+  service:
+    name: munin-node
+    state: restarted
+  become: yes
 
 - name: start service mysql
   service: name={{ mysql_service }} state=started enabled=yes

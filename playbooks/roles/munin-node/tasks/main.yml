@@ -24,8 +24,8 @@
   blockinfile:
     dest: /etc/munin/munin.conf
     block: |
-      [{{ env }}; {{ ansible_hostname }}]
-        address {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}
+      [{{ env }};{{ ansible_hostname }}]
+        address {{ ansible_ssh_host }}
         use_node_name yes
     marker: "# {mark} ANSIBLE MANAGED BLOCK {{ env }}; {{ ansible_hostname }}"
     backup: yes

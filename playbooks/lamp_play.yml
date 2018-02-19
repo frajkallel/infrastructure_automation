@@ -1,7 +1,9 @@
 - name: install docker
-  hosts: prod
+  hosts: mysql
   roles:
     - munin-node
+
+  become: true
 
   #tasks:
   #  - name: Install zenity

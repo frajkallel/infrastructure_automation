@@ -18,7 +18,7 @@
 - name: update munin.conf
   lineinfile:
     path: /etc/munin/munin.conf
-    line: '{{ item.name }}   {{ item.value }}'
+    line: '{{ item.name }} {{ item.value }}'
     insertbefore: BOF
   with_items:
     - name: dbdir
@@ -29,12 +29,6 @@
       value: "/var/log/munin"
     - name: rundir
       value: "/var/run/munin"
-  become: yes
-
-- name: configure apache.conf for munin
-  copy:
-    src: files/apache.conf
-    dest: /etc/munin/apache.conf
   become: yes
 
 - name: configure apache24.conf for munin
