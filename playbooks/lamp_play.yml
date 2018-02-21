@@ -1,8 +1,9 @@
 - name: install docker
-  hosts: mysql
+  hosts: nagios
+  vars:
+    - apache2_for_php: true
   roles:
-    - munin-node
-
+    - nagios
   become: true
 
   #tasks:
@@ -12,3 +13,9 @@
   #    remote_user: vagrant
   #    shell:  echo "{{ansible_fqdn}} done" >> /tmp/list
   #    delegate_to: 192.168.100.12
+
+- name: install client
+  hosts: all:!nagios
+  roles:
+    - nrpe
+  become: true

@@ -1,0 +1,29 @@
+---
+- include_tasks: install_nagios.yml
+
+- name: generate hostsgroup
+  blockinfile:
+    dest: /usr/local/nagios/etc/objects/hostsgroup.cfg
+    block: |
+      define hostgroup {
+        hostgroup_name  {{ env }}
+        alias           {{ env }}    
+        members         {% for host in groups['all'] %} {% if hostvars[host].inventory_hostname not in groups["nagios"] %} {{ hostvars[host].inventory_hostname }} {% if not loop.last %},{% endif %} {% endif %} {% endfor %} 
+        }
+    marker: "# {mark} ANSIBLE MANAGED BLOCK {{ env }}"
+    backup: yes  
+  tags:
+    - config
+
+- name: generate hosts config file
+  template:
+    src: templates/host.cfg
+    dest: /usr/local/nagios/etc/servers/{{item}}.cfg
+    owner: nagios
+    group: nagios
+  become: yes
+  when: "'{{ item }}' not in groups['nagios']"
+  with_items:
+    - "{{groups['all']}}"
+  tags:
+    - config

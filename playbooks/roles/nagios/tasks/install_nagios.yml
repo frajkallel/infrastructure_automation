@@ -1,0 +1,170 @@
+- name: create group nagcmd
+  group:
+    name: nagcmd
+  become: yes
+
+- name: create nagios user
+  user:
+    name: nagios
+    groups: nagcmd
+    append: yes
+  become: yes
+
+- name: Add www-data user, to the nagcmd group
+  user:
+    name: www-data
+    groups: nagcmd
+    append: yes
+  become: yes
+
+- name: install the required packages
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - build-essential 
+    - libgd2-xpm-dev 
+    - openssl 
+    - libssl-dev 
+    - unzip
+    - python-passlib
+  become: yes
+
+- name: Download Nagios Core
+  get_url:
+    url: https://sourceforge.net/projects/nagios/files/nagios-4.x/nagios-4.3.4/nagios-4.3.4.tar.gz
+    dest: /tmp/nagios-4.3.4.tar.gz
+  become: yes
+
+- name: Extract the Nagios archive
+  shell: cd /tmp; tar zxf /tmp/nagios-*.tar.gz
+  become: yes
+
+- name: Configure Nagios
+  shell: cd /tmp/nagios-*; ./configure --with-nagios-group=nagios --with-command-group=nagcmd --with-mail=/usr/sbin/sendmail; make all; make install; make install-commandmode; make install-init; make install-config 
+  become: yes
+
+- name: Apache configuration for Nagios
+  shell: cd /tmp/nagios-*; /usr/bin/install -c -m 644 sample-config/httpd.conf /etc/apache2/sites-available/nagios.conf; cp -R contrib/eventhandlers/ /usr/local/nagios/libexec/; chown -R nagios:nagios /usr/local/nagios/libexec/eventhandlers
+  become: yes
+
+- name: Install the Nagios Plugins
+  get_url:
+    url: https://nagios-plugins.org/download/nagios-plugins-2.2.1.tar.gz
+    dest: /tmp/nagios-plugins-2.2.1.tar.gz
+  become: yes
+
+- name: Extract the nagios plugin archive
+  shell: cd /tmp; tar zxf /tmp/nagios-plugins-*.tar.gz
+  become: yes
+
+- name: configure the nagios plugin archive
+  shell: cd /tmp/nagios-plugins-*; ./configure --with-nagios-user=nagios --with-nagios-group=nagios --with-openssl; make; make install
+  become: yes  
+
+- name: install nagios-plugins to remove the pb with plugin check_*
+  apt: name=nagios-plugins state=installed update_cache=yes
+  become: yes
+
+- name: Copy check_* plugins to to /usr/local/nagios/libexec
+  shell: cp /usr/lib/nagios/plugins/check_* /usr/local/nagios/libexec
+  become: yes
+
+- name: Installing the check_nrpe Plugin
+  get_url:
+    url: https://github.com/NagiosEnterprises/nrpe/releases/download/nrpe-3.2.1/nrpe-3.2.1.tar.gz
+    dest: /tmp/nrpe-3.2.1.tar.gz
+  become: yes
+
+- name: Extract the NRPE archive
+  shell: cd /tmp; tar zxf /tmp/nrpe-*.tar.gz
+  become: yes
+
+- name: Configure NRPE
+  shell: cd /tmp/nrpe-*; ./configure ; make check_nrpe; make install-plugin 
+  become: yes
+
+- name: Uncomment servers directory line from /usr/local/nagios/etc/nagios.cfg
+  lineinfile:
+    dest: /usr/local/nagios/etc/nagios.cfg
+    regexp: '^#cfg_dir=/usr/local/nagios/etc/servers$'
+    line: 'cfg_dir=/usr/local/nagios/etc/servers'
+  become: yes
+
+- name: add hostsgroup line from /usr/local/nagios/etc/nagios.cfg
+  lineinfile:
+    dest: /usr/local/nagios/etc/nagios.cfg
+    insertafter: '^cfg_dir=/usr/local/nagios/etc/servers$'
+    line: 'cfg_file=/usr/local/nagios/etc/objects/hostsgroup.cfg'
+  become: yes
+
+- name: create servers directory
+  file:
+    path: /usr/local/nagios/etc/servers
+    owner: nagios
+    group: nagios
+    state: directory
+    mode: 0755
+  become: yes
+
+- name: Update email in /usr/local/nagios/etc/objects/contacts.cfg
+  template:
+    src: templates/contacts.cfg
+    dest: /usr/local/nagios/etc/objects/contacts.cfg
+    owner: nagios
+    group: nagios
+  become: yes
+
+- name: Add check_nrpe in /usr/local/nagios/etc/objects/commands.cfg
+  copy:
+    src: files/commands.cfg
+    dest: /usr/local/nagios/etc/objects/commands.cfg
+    owner: nagios
+    group: nagios
+  become: yes
+
+- name: generate empty hostsgroup 
+  template:
+    src: templates/hostsgroup.cfg
+    dest: /usr/local/nagios/etc/objects/hostsgroup.cfg
+    owner: nagios
+    group: nagios
+  become: yes
+
+- name: Enable the Apache rewrite and cgi
+  apache2_module:
+    name: "{{ item }}"
+  with_items:
+    - rewrite
+    - cgi
+  become: yes
+
+- name: create nagiosadmin account
+  htpasswd:
+    path: /usr/local/nagios/etc/htpasswd.users
+    name: nagiosadmin
+    password: 'nagiosadmin'
+  become: yes
+
+- name: enable nagios vhost
+  file:
+    src: /etc/apache2/sites-available/nagios.conf
+    dest: /etc/apache2/sites-enabled/nagios.conf
+    state: link
+  become: yes
+
+- name: Restart apache2
+  service:
+    name: apache2
+    state: restarted
+  become: yes
+
+- name: Add nagios service
+  copy:
+    src: files/nagios.service
+    dest: /etc/systemd/system/nagios.service
+  become: yes
+
+- name: start nagios and enabled it to start when server boot
+  shell: systemctl enable /etc/systemd/system/nagios.service; systemctl start nagios
+  become: yes
+
+#support : http://www.sbarjatiya.com/notes_wiki/index.php/Ansible_nagios-server_role

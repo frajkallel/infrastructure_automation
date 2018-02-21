@@ -6,11 +6,10 @@
     - nagios-plugins
   become: yes
 
-- name: Configure NRPE Client.
-  lineinfile:
+- name: custom nrpe.cfg
+  template:
+    src: templates/nrpe.cfg
     dest: /etc/nagios/nrpe.cfg
-    line: "allowed_hosts=127.0.0.1, {{ ip_nagios }}"
-    regexp: "^allowed_hosts=127.0.0.1"
   become: yes
 
 - name: Restart NRPE

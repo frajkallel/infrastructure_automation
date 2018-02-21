@@ -1,8 +1,16 @@
 [dev:children]
-lamp
+nagios
+mysql
+proxysql
 
-[lamp]
-backbone  ansible_ssh_host=192.168.100.12 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/backbone/virtualbox/private_key
+[nagios]
+vma ansible_ssh_host=192.168.100.11 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vma/virtualbox/private_key
 
-[mysql:children]
-lamp
+[mysql]
+#vma ansible_ssh_host=192.168.100.11 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vma/virtualbox/private_key node_server_id=1
+vmb ansible_ssh_host=192.168.100.12 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vmb/virtualbox/private_key node_server_id=2
+#vmc ansible_ssh_host=192.168.100.13 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vmc/virtualbox/private_key node_server_id=3
+
+[proxysql]
+#vma ansible_ssh_host=192.168.100.11 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vma/virtualbox/private_key 
+#vmb ansible_ssh_host=192.168.100.12 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vmb/virtualbox/private_key 
