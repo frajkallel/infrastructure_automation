@@ -1,0 +1,14 @@
+---
+- name: Install sudo
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - sudo
+  become: yes
+
+- name: Allow admin user to have passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    line: 'admibtek2018 ALL=(ALL) NOPASSWD: ALL'
+    validate: visudo -cf %s
+  become: yes
+  

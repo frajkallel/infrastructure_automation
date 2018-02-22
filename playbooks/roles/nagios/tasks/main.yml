@@ -1,6 +1,17 @@
 ---
 - include_tasks: install_nagios.yml
 
+- name: create directory for {{ env }} hosts
+  file:
+    path: /usr/local/nagios/etc/servers/{{ env }}
+    state: directory
+    mode: 0755
+    owner: nagios
+    group: nagios
+  become: yes
+  tags:
+    - config
+
 - name: generate hostsgroup
   blockinfile:
     dest: /usr/local/nagios/etc/objects/hostsgroup.cfg
@@ -18,12 +29,15 @@
 - name: generate hosts config file
   template:
     src: templates/host.cfg
-    dest: /usr/local/nagios/etc/servers/{{item}}.cfg
+    dest: /usr/local/nagios/etc/servers/{{ env }}/{{item}}.cfg
     owner: nagios
     group: nagios
   become: yes
   when: "'{{ item }}' not in groups['nagios']"
   with_items:
     - "{{groups['all']}}"
+  notify:
+    - restart nagios
   tags:
     - config
+

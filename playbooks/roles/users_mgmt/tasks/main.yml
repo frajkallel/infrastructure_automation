@@ -1,0 +1,72 @@
+---
+- name: create system users
+  user:
+    createhome=yes
+    name={{ item }}
+  with_items:
+    - "{{ system_users }}"
+  become: yes
+
+- name: create .ssh dir in users home 
+  file:
+    path: "/home/{{ item }}/.ssh"
+    state: directory
+    mode: 0700
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_items:
+    - "{{ system_users }}"
+  become: yes
+
+- name: create empty authorized_keys file
+  template:
+    src: templates/authorized_keys
+    dest: "/home/{{ item }}/.ssh/authorized_keys"
+    mode: 0600
+    owner: "{{ item }}"
+    group: "{{ item }}" 
+  with_items:
+    - "{{ system_users }}"
+  become: yes  
+
+
+- name: Set up multiple authorized keys for dev user
+  authorized_key:
+    key: "{{ lookup('file',item) }}"
+    user: "devibtek2018"
+    manage_dir: yes
+  with_fileglob:
+    - "files/*"
+  become: yes
+
+- name: Set up multiple authorized keys adm user
+  authorized_key:
+    key: "{{ item }}"
+    user: "admibtek2018"
+  with_file:  "{{ sudoers_keys }}"
+  become: yes
+
+- name: create .ssh dir for root 
+  file:
+    path: "/root/.ssh"
+    state: directory
+    mode: 0700
+    owner: root
+    group: root
+  become: yes
+
+- name: create empty authorized_keys file
+  template:
+    src: templates/authorized_keys
+    dest: "/root/.ssh/authorized_keys"
+    mode: 0600
+    owner: root
+    group: root 
+  become: yes  
+
+- name: Set up multiple authorized keys for root
+  authorized_key:
+    key: "{{ item }}"
+    user: "root"
+  with_file:  "{{ root_keys }}"
+  become: yes  

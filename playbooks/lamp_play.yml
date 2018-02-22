@@ -3,7 +3,7 @@
   vars:
     - apache2_for_php: true
   roles:
-    - nagios
+    - nagios  
   become: true
 
   #tasks:
@@ -14,8 +14,8 @@
   #    shell:  echo "{{ansible_fqdn}} done" >> /tmp/list
   #    delegate_to: 192.168.100.12
 
-- name: install client
-  hosts: all:!nagios
-  roles:
-    - nrpe
-  become: true
+# - name: install client
+#   hosts: all:!nagios
+#   roles:
+#     - nrpe
+#   become: true

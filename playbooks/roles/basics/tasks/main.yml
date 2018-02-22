@@ -1,0 +1,11 @@
+---
+- name: Install tools
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - git
+    - glances
+    - htop
+    - curl
+    - ntp
+    - rsync
+  become: yes

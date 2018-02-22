@@ -1,0 +1,12 @@
+---
+- name: Update config ssh
+  template:
+    src: templates/sshd_config
+    dest: /etc/ssh/sshd_config
+  become: yes
+  
+- name: restart ssh service
+  service:
+    name: ssh
+    state: restarted
+  become: yes
