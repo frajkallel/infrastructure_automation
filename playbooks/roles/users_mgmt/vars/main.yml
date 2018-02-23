@@ -1,9 +1,10 @@
 ---
 sudoers_keys:
-  - "files/auser"
+  - "files/auser.pub"
 
 system_users:
   - admibtek2018
   - devibtek2018
+  - ftpibtek2018
 
 root_keys: "{{ sudoers_keys }}"

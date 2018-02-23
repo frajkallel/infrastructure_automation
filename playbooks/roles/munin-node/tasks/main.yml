@@ -12,6 +12,13 @@
     dest: /etc/munin/munin-node.conf
   become: yes
 
+- name: Install plugins munin
+  shell: ln -s /usr/share/munin/plugins/{{ item }}* /etc/munin/plugins/
+  with_items:
+    - "{{ check_service }}" 
+  become: yes
+  ignore_errors: yes
+
 - name: Restart munin-node
   service:
     name: munin-node
@@ -20,7 +27,7 @@
 
 # for delegate_to your PC must have access to IP to delegate
 - name: Add host to munin master
-  remote_user: vagrant
+  remote_user: root
   blockinfile:
     dest: /etc/munin/munin.conf
     block: |
@@ -33,7 +40,7 @@
   delegate_to: "{{ ip_nagios }}"
 
 - name: Restart apache on munin master
-  remote_user: vagrant
+  remote_user: root
   service:
     name: apache2
     state: restarted

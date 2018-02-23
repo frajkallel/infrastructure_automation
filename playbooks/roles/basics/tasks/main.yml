@@ -6,6 +6,16 @@
     - glances
     - htop
     - curl
-    - ntp
     - rsync
+  become: yes
+
+- name: set timezone to Europe/Paris
+  timezone:
+    name: Europe/Paris
+  become: yes
+
+- name: restart cron service
+  service:
+    name: cron
+    state: restarted
   become: yes

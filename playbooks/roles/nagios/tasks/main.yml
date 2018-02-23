@@ -1,17 +1,6 @@
 ---
 - include_tasks: install_nagios.yml
 
-- name: create directory for {{ env }} hosts
-  file:
-    path: /usr/local/nagios/etc/servers/{{ env }}
-    state: directory
-    mode: 0755
-    owner: nagios
-    group: nagios
-  become: yes
-  tags:
-    - config
-
 - name: generate hostsgroup
   blockinfile:
     dest: /usr/local/nagios/etc/objects/hostsgroup.cfg
@@ -23,6 +12,23 @@
         }
     marker: "# {mark} ANSIBLE MANAGED BLOCK {{ env }}"
     backup: yes  
+  tags:
+    - config
+
+- name: create directory for {{ env }} hosts
+  file:
+    path: /usr/local/nagios/etc/servers/{{ env }}
+    state: directory
+    mode: 0755
+    owner: nagios
+    group: nagios
+  become: yes
+  tags:
+    - config
+
+- name: remove all hosts config in {{ env }}
+  shell: rm -Rf /usr/local/nagios/etc/servers/{{ env }}/*
+  become: yes
   tags:
     - config
 

@@ -1,9 +1,9 @@
 - name: install docker
-  hosts: nagios
+  hosts: mysql
   vars:
     - apache2_for_php: true
   roles:
-    - nagios  
+    - munin-node  
   become: true
 
   #tasks:
