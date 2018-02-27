@@ -1,0 +1,9 @@
+
+var cfg = { _id: 'rs0',
+   members: [
+    {% for host in groups['mongo'] %}{ _id: {{ hostvars[host].node_server_id }} , host: '{{ hostvars[host].ansible_ssh_host }}:27017'}{% if not loop.last %},{% endif %}{% endfor %}    
+   ]
+};
+
+var error = rs.initiate(cfg);
+printjson(error);

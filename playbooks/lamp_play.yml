@@ -1,9 +1,9 @@
 - name: install docker
-  hosts: mysql
+  hosts: mongo
   vars:
-    - apache2_for_php: true
+    - apache2_for_php: false
   roles:
-    - munin-node  
+    - mongo
   become: true
 
   #tasks:
@@ -18,4 +18,5 @@
 #   hosts: all:!nagios
 #   roles:
 #     - nrpe
+#     - munin-node
 #   become: true

@@ -62,16 +62,10 @@
     - "{{ opendkim_domain }}"
   become: yes
 
-  #Download keys from git instead generate it
-- name: Generate the public and private keys
-  shell: cd /etc/opendkim/keys/{{ item }}; opendkim-genkey -s mail -d {{ item }} 
-  with_items:
-    - "{{ opendkim_domain }}"
-  become: yes
-
-- name: Change the owner of the private key to opendkim
-  file:
-    path: /etc/opendkim/keys/{{ item }}/mail.private
+- name: Copy private key and Change the owner of the private key to opendkim
+  copy:
+    src: files/{{ item }}/mail.private
+    dest: /etc/opendkim/keys/{{ item }}/mail.private
     owner: opendkim
     group: opendkim
   with_items:
