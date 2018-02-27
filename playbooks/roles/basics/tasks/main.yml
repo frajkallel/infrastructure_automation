@@ -7,6 +7,7 @@
     - htop
     - curl
     - rsync
+    - logrotate
   become: yes
 
 - name: set timezone to Europe/Paris

@@ -14,11 +14,3 @@ nagios_pwd: nagios_pwd
 #proxy_monitor_pwd: pmonitor
 #proxy_monitor_user: pmonitor
 
-#eg. of munin plugin for mysql 
-plugins_list:
-  - mysql_
-  - mysql_bytes 
-  - mysql_queries
-  - mysql_slowqueries
-  - mysql_threads
-
