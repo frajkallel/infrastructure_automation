@@ -1,9 +1,9 @@
 - name: install docker
-  hosts: mongo
+  hosts: nagios
   vars:
     - apache2_for_php: false
   roles:
-    - mongo
+    - docker-compose
   become: true
 
   #tasks:

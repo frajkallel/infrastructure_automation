@@ -6,7 +6,12 @@
     - ca-certificates 
     - curl 
     - software-properties-common
+    - python-pip
   become: yes
+
+- name: install docker-py
+  pip:
+    name: docker-py
 
 - name: Add Docker’s official GPG key
   shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -

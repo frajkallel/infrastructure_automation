@@ -1,4 +1,9 @@
 ---
+# for full reset we can use
+# sudo killall mongod            # stops all running mongodb server instances
+# sudo rm -Rf /var/lib/mongo/*   # clears all mongodb files
+# sudo service mongod start      # starts mongodb
+
 - name: Update repositories cache
   apt:
     update_cache: yes
@@ -23,11 +28,24 @@
   apt: name=mongodb-org state=latest update_cache=yes
   become: yes
 
+- name: check if standalone mongodb is already exist
+  shell: grep authorization /etc/mongod.conf
+  register: check_standalone_result
+  become: yes
+  ignore_errors: yes
+
+- name: check if replication is already exist
+  shell: grep replSetName /etc/mongod.conf
+  register: check_repl_result
+  become: yes
+  ignore_errors: yes 
+
 - name: update config file mongod.conf
   template:
     src: templates/mongod.conf
     dest: /etc/mongod.conf
   become: yes
+  when: (check_repl_result.rc == 1) and (check_standalone_result.rc == 1) 
   tags:
     - admin 
 
@@ -37,23 +55,31 @@
     state: started
     enabled: yes
   become: yes
+  when: check_repl_result.rc == 1 
+
+- name: Wait 300 seconds for port 27017 to become open on the host, don't start checking for 10 seconds
+  wait_for:
+    port: 27017
+    delay: 10
 
 - name: copy file admin.js
   template:
     src: templates/admin.js.j2
     dest: /tmp/admin.js
   become: yes
+  when: check_repl_result.rc == 1
 
- 
 - name: config admin user
   command: mongo localhost:27017 /tmp/admin.js
   become: yes
+  when: (check_repl_result.rc == 1) and (check_standalone_result.rc == 1) 
 
 - name: test access with admin user
   command: mongo -u{{ mongo_user }} -p{{ mongo_pwd }} --authenticationDatabase admin
   register: mongo_auth
 
-- fail:
+- name: failed access with admin
+  fail:
     msg: "PB authentication"
   when: mongo_auth.failed
 
@@ -118,6 +144,7 @@
     name: mongod
     state: restarted
   become: yes
+  when: (check_repl_result.rc == 1) or (check_standalone_result.rc == 1)
 
 - name: copy file replica.js
   template:
@@ -134,7 +161,7 @@
 - name: config replica set
   command: mongo localhost:27017/admin -u{{ mongo_user }} -p{{ mongo_pwd }} --authenticationDatabase admin /tmp/replica.js
   become: yes
-  when: (node_server_id == 1) and (mongo_replicaset_setup)
+  when: (node_server_id == 1) and (mongo_replicaset_setup) and (check_repl_result.rc == 1 )
   tags:
     - rep
 
