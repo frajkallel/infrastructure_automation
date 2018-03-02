@@ -1,10 +1,12 @@
-- name: install docker
-  hosts: nagios
-  vars:
-    - apache2_for_php: false
-  roles:
-    - docker-compose
-  become: true
+# - name: install docker
+#   hosts: nagios
+#   vars:
+#     - apache2_for_php: false
+#   roles:
+#     - ssh
+#     - users_mgmt
+#     - munin
+#   become: true
 
   #tasks:
   #  - name: Install zenity
@@ -20,3 +22,14 @@
 #     - nrpe
 #     - munin-node
 #   become: true
+
+- name: install munin-node
+  hosts: mongo
+  vars:
+    - mongo_replicaset_setup: false
+  roles:
+    - ssh
+    - users_mgmt
+    - mongo
+    - munin-node
+  become: true

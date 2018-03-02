@@ -1,10 +1,12 @@
-ip_nagios: 192.168.100.12
+ip_nagios: 192.168.100.11
 munin_node_allowed_ips:
   - ^127\.0\.0\.1$
   - ^::1$
-  - ^192\.168\.100\.12$
+  - ^192\.168\.100\.11$
 proxy_monitor_user: pmonit_user
 proxy_monitor_pwd: pmonit_pwd
 proxy_app_user: papp_user
 proxy_app_pwd: papp_pwd
+mongo_user: admin
+mongo_pwd: admin
 

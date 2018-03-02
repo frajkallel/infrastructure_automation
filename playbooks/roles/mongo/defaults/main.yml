@@ -1,5 +1,5 @@
 ---
 mongo_replicaset_setup: true
 mongo_keyfile_dir: "/etc/mongodb"
-mongo_user: admin
-mongo_pwd: admin
+#mongo_user: admin
+#mongo_pwd: admin

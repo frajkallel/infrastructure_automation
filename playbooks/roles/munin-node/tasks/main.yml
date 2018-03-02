@@ -4,6 +4,35 @@
   with_items:
     - munin-node 
     - munin-plugins-extra
+    - python-pip
+    - build-essential 
+    - python-dev
+  become: yes
+
+- name: install pymongo
+  pip:
+    name: pymongo
+  become: yes
+
+- name: Download plugins mongodb
+  git:
+    repo: 'https://github.com/comerford/mongo-munin.git'
+    dest: /tmp/mongo-munin
+  become: yes
+
+- name: copy mongo plugins to munin plugins directory
+  shell:  cp /tmp/mongo-munin/mongo_* /usr/share/munin/plugins
+  become: yes
+  ignore_errors: yes
+
+- name: chmod +x mongo plugins 
+  shell:  chmod +x /usr/share/munin/plugins/mongo_*
+  become: yes
+
+- name: set env for mongo plugin
+  template:
+    src: templates/munin-node
+    dest: /etc/munin/plugin-conf.d/munin-node
   become: yes
 
 - name: configure munin-node.conf
