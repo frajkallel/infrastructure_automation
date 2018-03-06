@@ -1,0 +1,20 @@
+---
+haproxy_smtp: false
+haproxy_http: false 
+haproxy_timeout_connect: 500
+haproxy_timeout_client: 50000
+haproxy_timeout_server: 50000
+haproxy_admin_user: admin
+haproxy_admin_pwd: admin
+haproxy_smtp_lb_algorithm: roundrobin
+haproxy_smtp_rate_limit_sessions: 5000
+haproxy_smtp_timeout_client: 1m
+haproxy_smtp_timeout_server: 1m
+haproxy_smtp_timeout_connect: 5s
+
+haproxy_http_stats_timeout: 30s
+haproxy_http_maxconn: 2000
+haproxy_http_timeout_connect: 5000ms
+haproxy_http_timeout_queue: 5000ms
+haproxy_http_timeout_client: 25m
+haproxy_http_timeout_server: 25m

@@ -1,0 +1,27 @@
+---
+- name: Install keepalived
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - keepalived
+  become: yes
+
+- name: allowing to bind to the shared IP address
+  sysctl:
+    name: net.ipv4.ip_nonlocal_bind
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+  become: yes
+
+- name: config keepalived
+  template:
+    src: templates/keepalived.conf
+    dest:  /etc/keepalived/keepalived.conf
+  become: yes
+
+- name: restart keepalived
+  service:
+    name: keepalived
+    state: restarted
+  become: yes

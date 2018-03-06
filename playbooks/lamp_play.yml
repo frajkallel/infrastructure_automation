@@ -1,12 +1,12 @@
-# - name: install docker
-#   hosts: nagios
-#   vars:
-#     - apache2_for_php: false
-#   roles:
-#     - ssh
-#     - users_mgmt
-#     - munin
-#   become: true
+- name: install docker
+  hosts: nagios
+  vars:
+    - apache2_for_php: false
+  roles:
+    - ssh
+    - users_mgmt
+    - docker-compose
+  become: true
 
   #tasks:
   #  - name: Install zenity
@@ -23,13 +23,35 @@
 #     - munin-node
 #   become: true
 
-- name: install munin-node
-  hosts: mongo
-  vars:
-    - mongo_replicaset_setup: false
-  roles:
-    - ssh
-    - users_mgmt
-    - mongo
-    - munin-node
-  become: true
+# - name: For getting cluster info
+#   hosts: lb
+#   vars:
+#     - haproxy_http: true
+#   roles:
+#     - ssh
+#     - users_mgmt
+#     - haproxy
+#     - keepalived
+#   become: true
+
+  
+# - name: install munin-node
+#   hosts: web
+#   vars:
+#     - apache2_for_php: true
+#   roles:
+#     - ssh
+#     - users_mgmt
+#     - apache2
+#     - php
+#   become: true
+
+# - name: install munin-node
+#   hosts: web
+#   vars:
+#     - apache2_for_php: false
+#   roles:
+#     - ssh
+#     - users_mgmt
+#     - apache2
+#   become: true

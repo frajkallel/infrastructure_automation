@@ -1,0 +1,60 @@
+---
+- name: Install packages requirements
+  apt: name=software-properties-common state=latest update_cache=yes
+  become: yes
+
+- name: add repo for haproxy
+  apt_repository:
+    repo: ppa:vbernat/haproxy-1.8
+    update_cache: yes
+  become: yes
+
+- name: Install haproxy
+  apt: name=haproxy state=latest update_cache=yes
+  become: yes  
+
+- name: Enable haproxy at boot
+  copy:
+    src: files/haproxy
+    dest: /etc/default/haproxy
+  become: yes
+
+- name: config cluster smtp
+  template:
+    src: templates/smtp_haproxy.cfg
+    dest: /etc/haproxy/haproxy.cfg
+    validate: /usr/sbin/haproxy -c -f %s
+  become: yes
+  when: haproxy_smtp
+
+- name: config cluster smtp
+  template:
+    src: templates/http_haproxy.cfg
+    dest: /etc/haproxy/haproxy.cfg
+    validate: /usr/sbin/haproxy -c -f %s
+  become: yes
+  when: haproxy_http
+
+- name: activate logs of haproxy
+  copy:
+    src: files/49-haproxy.conf
+    dest: /etc/rsyslog.d/49-haproxy.conf
+  become: yes
+
+- name: restart rsyslog
+  service:
+    name: rsyslog
+    state: restarted
+  become: yes
+
+- name: rotate haproxy logs
+  copy:
+    src: files/logrotate.d/haproxy
+    dest: /etc/logrotate.d/haproxy
+  become: yes
+
+- name: restart haproxy
+  service:
+    name: haproxy
+    state: restarted
+  become: yes
