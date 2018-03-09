@@ -35,6 +35,23 @@
     dest: /etc/munin/plugin-conf.d/munin-node
   become: yes
 
+- name: plugin for docker
+  copy:
+    src: "files/{{ item }}"
+    dest: "/usr/share/munin/plugins/{{ item }}"
+    mode: 0755
+  become: yes
+  with_items:
+    - docker_cpu
+    - docker_memory
+
+- name: config plugin for docker
+  copy:
+    src: files/docker
+    dest: /etc/munin/plugin-conf.d/docker
+  become: yes
+
+
 - name: configure munin-node.conf
   template:
     src: templates/munin-node.conf

@@ -4,6 +4,12 @@
   with_items:
     - nagios-nrpe-server 
     - nagios-plugins
+    - python-pip
+  become: yes
+
+- name: install pymongo
+  pip:
+    name: pymongo
   become: yes
 
 - name: custom nrpe.cfg
@@ -11,6 +17,16 @@
     src: templates/nrpe.cfg
     dest: /etc/nagios/nrpe.cfg
   become: yes
+
+- name: download plugin check_docker
+  copy:
+    src: "files/{{ item }}"
+    dest: "/usr/lib/nagios/plugins/{{ item }}"
+    mode: 0755
+  become: yes
+  with_items:
+    - check_docker
+    - check_mongodb.py
 
 - name: Restart NRPE
   service:
