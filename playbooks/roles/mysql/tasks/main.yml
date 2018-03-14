@@ -1,5 +1,5 @@
 ---
-- include: full_reset.yml
+- include_tasks: full_reset.yml
   when: mgr_full_reset
 
 - name: Install a apt mysql.deb package from the internet.
@@ -49,5 +49,5 @@
     state: restarted
   when: not mysql_group_replication_deployment
 
-- include: mgr.yml
+- include_tasks: mgr.yml
   when: mysql_group_replication_deployment

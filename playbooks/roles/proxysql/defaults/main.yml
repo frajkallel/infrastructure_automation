@@ -5,3 +5,4 @@ url_proxysql_package: https://github.com/sysown/proxysql/releases/download/v1.4.
 #proxy_monitor_user: pmonit_user
 proxy_admin_user: admin
 proxy_admin_pwd: admin
+proxy_url_proxytop: https://raw.githubusercontent.com/sysown/proxytop/master/proxytop

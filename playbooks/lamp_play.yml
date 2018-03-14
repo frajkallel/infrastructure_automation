@@ -1,12 +1,19 @@
-- name: install docker
-  hosts: nagios
+- name: install mysql
+  hosts: all
   vars:
     - apache2_for_php: false
   roles:
-    - ssh
-    - users_mgmt
-    - docker-compose
+    - ufw
   become: true
+
+# - name: install proxysql
+#   hosts: proxysql
+#   vars:
+#     - apache2_for_php: false
+#   roles:
+#     - basics
+#     - proxysql
+#   become: true
 
   #tasks:
   #  - name: Install zenity

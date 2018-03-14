@@ -9,6 +9,26 @@
   with_items:
     - mysql-client
     - python-mysqldb
+    - python-dev 
+    - libmysqlclient-dev
+    - python-pip
+  become: yes
+  
+#https://github.com/sysown/proxytop
+- name: install Proxytop requirement
+  pip:
+    name: "{{ item }}"
+  with_items:
+    - MySQL-python 
+    - npyscreen
+  become: yes
+
+- name: Download package proxytop
+  get_url:
+    url: "{{ proxy_url_proxytop }}"
+    dest: /usr/bin/proxytop
+    mode: 0755
+  become: yes 
 
 - name: Install a .deb package
   apt:
