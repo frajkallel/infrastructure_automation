@@ -43,6 +43,10 @@
 - name: Copy Mysql config
   copy: src=../files/mysqld.cnf dest=/etc/mysql/mysql.conf.d/mysqld.cnf mode=0644 owner=root group=root
 
+- name: Mysql tune config
+  template: src=templates/optimisation.cnf dest=/etc/mysql/mysql.conf.d/optimisation.cnf mode=0644 owner=root group=root
+  become: yes
+
 - name: Restart service Mysql
   service:
     name: mysql

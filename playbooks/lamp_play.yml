@@ -1,9 +1,10 @@
 - name: install mysql
-  hosts: all
+  hosts: mysql
   vars:
-    - apache2_for_php: false
+    - mysql_group_replication_deployment: false
+    - mgr_full_reset: false
   roles:
-    - ufw
+    - mysql
   become: true
 
 # - name: install proxysql

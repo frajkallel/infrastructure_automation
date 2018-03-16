@@ -1,0 +1,63 @@
+[mysqld]
+
+# MyIsam: size of the index buffers held in memory
+key_buffer_size = {{ mysql_key_buffer_size }}
+												
+#Maximum size of one packet
+max_allowed_packet = {{ mysql_max_allowed_packet }}
+													
+#How many threads the server should cache for reuse
+thread_cache_size = {{ mysql_thread_cache_size }}
+													
+#maximum permitted number of simultaneous client connections
+max_connections = {{ mysql_max_connections }}
+													
+#The number of open tables for all threads. 
+#Increasing this value increases the number of file descriptors that mysqld requires sysctl.conf
+table_open_cache = {{ mysql_table_open_cache }}
+													
+#Each session that must perform a sort allocates a buffer of this size
+sort_buffer_size = {{ mysql_sort_buffer_size }}
+													
+#Each thread that does a sequential scan for a MyISAM table 
+#allocates a buffer of this size (in bytes) for each table it scans
+read_buffer_size = {{ mysql_read_buffer_size }}
+
+#This variable is used for reads from MyISAM tables, and, for any storage engine, 
+#for Multi-Range Read optimization.
+read_rnd_buffer_size = {{ mysql_read_rnd_buffer_size }}
+													
+#The minimum size of the buffer that is used for plain index scans, 
+#range index scans, and joins that do not use indexes and thus perform full table scans
+join_buffer_size = {{ mysql_join_buffer_size }}
+													
+#The maximum size of internal in-memory temporary tables.
+tmp_table_size = {{ mysql_tmp_table_size }}
+max_heap_table_size = {{ mysql_max_heap_table_size }}
+													
+# The amount of memory allocated for caching query results.
+query_cache_size = {{ mysql_query_cache_size }}
+
+#Do not cache results that are larger than this number of bytes
+query_cache_limit = {{ mysql_query_cache_limit }}
+												
+#the memory area where InnoDB caches table and index data
+innodb_buffer_pool_size = {{ mysql_innodb_buffer_pool_size }}
+													
+#The size in bytes of the buffer that InnoDB uses to write to the log files on disk
+innodb_log_buffer_size = {{ mysql_innodb_log_buffer_size }}
+													
+#The number of log files in the log group (innodb_log_file_size * innodb_log_files_in_group)
+innodb_log_files_in_group = {{ mysql_innodb_log_files_in_group }}
+								
+#The size in bytes of each log file in a log group (innodb_log_buffer_size/innodb_log_files_in_group)	(64M)
+innodb_log_file_size = {{ mysql_innodb_log_file_size }}
+												
+# how to flush to the disk (set it to 2)												
+innodb_flush_log_at_trx_commit = {{ mysql_innodb_flush_log_at_trx_commit }}
+														
+#synchronizing the binary log to disk
+sync_binlog = {{ mysql_sync_binlog }}
+
+#Defines the method used to flush data to InnoDB data files and log files, which can affect I/O throughput.
+innodb_flush_method = {{ mysql_innodb_flush_method }}

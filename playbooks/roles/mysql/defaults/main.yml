@@ -12,5 +12,24 @@ nagios_pwd: nagios_pwd
 #proxy_app_user: papp_user
 #proxy_app_pwd: papp_pwd
 #proxy_monitor_pwd: pmonitor
-#proxy_monitor_user: pmonitor
-
+#proxy_monitor_user: pmonitor	
+mysql_key_buffer_size: 8M		
+mysql_max_allowed_packet:	4M		
+mysql_thread_cache_size: 0		
+mysql_max_connections: 151		
+mysql_table_open_cache: 2000							
+mysql_sort_buffer_size: 256K		
+mysql_read_buffer_size: 128K
+mysql_read_rnd_buffer_size: 256K		
+mysql_join_buffer_size: 256K		
+mysql_tmp_table_size: 16M		
+mysql_max_heap_table_size: 16M		
+mysql_query_cache_size: 1M		
+mysql_query_cache_limit: 1M			
+mysql_innodb_buffer_pool_size: 128M		
+mysql_innodb_log_buffer_size: 16M		
+mysql_innodb_log_files_in_group: 2		
+mysql_innodb_log_file_size: 48M		
+mysql_innodb_flush_log_at_trx_commit: 1		
+mysql_sync_binlog: 1		
+mysql_innodb_flush_method: O_DIRECT			

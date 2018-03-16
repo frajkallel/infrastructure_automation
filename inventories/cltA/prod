@@ -11,9 +11,9 @@ web
 vma ansible_ssh_host=192.168.100.11 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vma/virtualbox/private_key check_service='["postfix","mysql"]'
 
 [mysql]
-vma ansible_ssh_host=192.168.100.11 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vma/virtualbox/private_key node_server_id=1 ufw_rules='[{ "port": "80", "rule": "allow" },{ "port": "443", "rule": "allow" }]'
+#vma ansible_ssh_host=192.168.100.11 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vma/virtualbox/private_key node_server_id=1 ufw_rules='[{ "port": "80", "rule": "allow" },{ "port": "443", "rule": "allow" }]'
 vmb ansible_ssh_host=192.168.100.12 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vmb/virtualbox/private_key node_server_id=2 check_service='["mysql","postfix","apache"]' ufw_rules='[{ "from_ip": "192.168.100.1" },{ "from_ip": "192.168.100.10" }]'
-vmc ansible_ssh_host=192.168.100.13 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vmc/virtualbox/private_key node_server_id=3 
+#vmc ansible_ssh_host=192.168.100.13 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vmc/virtualbox/private_key node_server_id=3 
 
 [proxysql]
 #vma ansible_ssh_host=192.168.100.11 ansible_ssh_user=vagrant ansible_ssh_password=vagrant ansible_ssh_private_key_file=/home/fraj/vagbox/.vagrant/machines/vma/virtualbox/private_key 
