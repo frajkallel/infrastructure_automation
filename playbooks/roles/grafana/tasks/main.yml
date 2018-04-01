@@ -1,0 +1,34 @@
+---
+# support:
+#   - https://statusengine.org/tutorials/Graphite-Grafana/
+#   - https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-grafana-on-ubuntu-16-04
+#   - https://www.vultr.com/docs/how-to-install-and-configure-graphite-on-ubuntu-16-04
+- name: Add an Apt signing key, uses whichever key is at the URL
+  apt_key:
+    url: https://packagecloud.io/gpg.key
+    state: present
+  become: yes
+
+- apt_repository:
+    repo: deb https://packagecloud.io/grafana/stable/debian/ stretch main
+    state: present
+  become: yes
+
+- name: Install grafana
+  apt:
+    name: grafana
+    update_cache: yes
+  become: yes
+
+- name: config grafana
+  copy:
+    src: files/grafana.ini
+    dest: /etc/grafana/grafana.ini
+  become: yes
+
+- name: start grafana
+  service:
+    name: grafana-server
+    state: started
+    enabled: yes
+  become: yes

@@ -1,0 +1,10 @@
+---
+- name: Load metrics
+  include_vars: "{{ metrics_file }}"
+  when: metrics_file is defined
+
+- name: Configure metrics for collectd
+  template: src=collectd.conf.d/collectd-curl_json.conf dest=/etc/collectd/collectd.conf.d/{{ item.name }}.conf
+  with_items: "{{ collectd if collectd is defined else [] }}"
+  when: metrics_file is defined
+  become: yes

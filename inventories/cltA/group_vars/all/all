@@ -10,3 +10,9 @@ proxy_app_pwd: papp_pwd
 mongo_user: admin
 mongo_pwd: admin
 
+#nagios account for mysql
+nagios_username: nagios_user
+nagios_pwd: nagios_pwd
+
+graphite_hostname: graphite.domain.lan
+carbon_port: 2003

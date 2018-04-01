@@ -1,0 +1,3 @@
+collectd_modules_path: /opt/collectd-plugins/
+collectd_enable_mysql: False
+collectd_enable_proxysql: False

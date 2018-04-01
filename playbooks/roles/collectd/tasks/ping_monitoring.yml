@@ -1,0 +1,7 @@
+- name: Create ping.conf for monitoring
+  template: src={{ playbook_dir + '/roles/collectd/templates/collectd.conf.d/ping.conf' }} dest={{ playbook_dir | dirname }}/target/ping.conf
+  delegate_to: localhost
+
+- name: Create seyren alerts script
+  template: src={{ playbook_dir + '/roles/collectd/templates/seyren/create_ping_check.sh.j2' }} dest={{ playbook_dir | dirname }}/target/create_ping_check.sh mode=755
+  delegate_to: localhost

@@ -1,10 +1,23 @@
-- name: install mysql
-  hosts: mysql
+# - name: install graphite
+#   hosts: mysql
+#   vars:
+#     - mysql_group_replication_deployment: false
+#     - mgr_full_reset: false
+#     - apache2_for_php: false
+#   roles:
+#     - graphite
+#     - grafana
+#   become: true
+
+- name: install graphite
+  hosts: proxysql
   vars:
     - mysql_group_replication_deployment: false
     - mgr_full_reset: false
+    - collectd_enable_mysql: true
   roles:
     - mysql
+    - collectd
   become: true
 
 # - name: install proxysql

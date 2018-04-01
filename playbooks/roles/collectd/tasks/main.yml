@@ -1,0 +1,26 @@
+---
+- name: Install collectd
+  apt: name={{ item }} state=present update_cache=yes cache_valid_time=3600
+  with_items:
+    - collectd 
+    - collectd-utils
+  become: yes
+
+- name: Configure collectd
+  template: src={{ item.src }} dest=/etc/collectd/{{ item.dest }}
+  with_items:
+    - { src: collectd.conf, dest: collectd.conf }
+    - { src: collectd.conf.d/graphite.conf, dest: collectd.conf.d/graphite.conf }
+    - { src: collectd.conf.d/filters.conf, dest: collectd.conf.d/filters.conf }
+  become: yes
+
+
+- include_tasks: mysql_plugin.yml
+  when: collectd_enable_mysql
+
+- include_tasks: proxysql_plugin.yml
+  when: collectd_enable_proxysql
+
+- name: Restart collectd
+  service: name=collectd state=restarted
+  become: yes

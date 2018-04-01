@@ -1,0 +1,87 @@
+---
+- name: Install package for graphite
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - graphite-web 
+    - graphite-carbon 
+    - mysql-server 
+    - python-mysqldb  
+    - python-pymysql 
+    - apache2 
+    - libapache2-mod-wsgi 
+    - apt-transport-https 
+    - ssl-cert
+  become: yes
+
+- name: Create database with name graphite
+  mysql_db:
+    name: graphite
+    state: present
+
+- name: graphite mysql account
+  mysql_user:
+    name: "{{ graphite_user }}"
+    password: "{{ graphite_pwd }}"
+    host: "127.0.0.1"
+    priv: 'graphite.*:ALL,GRANT'
+    state: present
+
+- name: graphite setting
+  template:
+    src: templates/local_settings.py
+    dest: /etc/graphite/local_settings.py
+  become: yes
+
+- name: sync the database
+  shell: graphite-manage migrate auth
+  become: yes
+
+- name: sync the database
+  shell: graphite-manage syncdb --noinput
+  become: yes
+
+- name: enable carbon-cache to start on boot
+  copy:
+    src: files/graphite-carbon
+    dest: /etc/default/graphite-carbon
+  become: yes
+
+- name: config carbon
+  copy:
+    src: files/carbon.conf
+    dest: /etc/carbon/carbon.conf
+  become: yes
+
+- name: config storage schema
+  copy:
+    src: files/storage-schemas.conf
+    dest: /etc/carbon/storage-schemas.conf
+  become: yes
+
+- name: config storage aggregation
+  copy:
+    src: files/storage-aggregation.conf
+    dest: /etc/carbon/storage-aggregation.conf
+  become: yes
+
+- name: start carbon service
+  service:
+    name: carbon-cache
+    state: restarted
+  become: yes
+
+- name: config apache for graphite
+  copy:
+    src: files/apache2-graphite.conf
+    dest: /etc/apache2/sites-available/apache2-graphite.conf 
+  become: yes
+
+- name: activate vhost
+  shell: a2dissite 000-default; a2ensite apache2-graphite
+  become: yes
+
+- name: restart apache service
+  service:
+    name: apache2
+    state: restarted
+  become: yes

@@ -7,8 +7,8 @@ group_replication_passwd: repl_passwd
 mysql_group_replication_deployment: true
 mysql_data_dir: /var/lib/mysql
 mgr_full_reset: false
-nagios_username: nagios_user
-nagios_pwd: nagios_pwd
+#nagios_username: nagios_user
+#nagios_pwd: nagios_pwd
 #proxy_app_user: papp_user
 #proxy_app_pwd: papp_pwd
 #proxy_monitor_pwd: pmonitor

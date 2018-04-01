@@ -1,0 +1,12 @@
+---
+- name: Copy mongostat2collectdscript
+  copy: src=mongostat2collectd.sh dest=/usr/local/bin/mongostat2collectd.sh mode=0755
+  become: yes
+
+- name: Copy TypesDB for collectd
+  copy: src=mongostat_types.db dest=/etc/collectd/mongostat_types.db
+  become: yes
+
+- name: Add config in collectd
+  template: src=collectd.conf.d/mongostat.conf dest=/etc/collectd/collectd.conf.d/mongostat.conf
+  become: yes

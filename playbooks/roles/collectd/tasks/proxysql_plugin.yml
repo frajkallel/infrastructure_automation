@@ -1,0 +1,28 @@
+---
+- name: Install python-pip package
+  apt: name="{{ item }}" update_cache=yes
+  with_items:
+    - python-mysqldb
+    - python-pip
+    - idle-python2.7
+    - python-qt4
+    - python-qt4-gl
+    - python-dev
+  become: yes
+
+- name: install proxysql tools
+  pip:
+    name: proxysql_tools
+  become: yes
+
+- name: Create Collectd modules path
+  file: name={{ collectd_modules_path }} state=directory
+  become: yes
+
+- name: Get proxysql module
+  copy: src=../files/proxysql.py dest={{ collectd_modules_path }}/proxysql.py
+  become: yes
+
+- name: Add proxysql config in collectd
+  template: src=../templates/collectd.conf.d/proxysql.conf dest=/etc/collectd/collectd.conf.d/proxysql.conf
+  become: yes

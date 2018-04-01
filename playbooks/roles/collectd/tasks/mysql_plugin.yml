@@ -1,0 +1,18 @@
+---
+- name: Install python-mysqldb package
+  apt:
+    name: python-mysqldb
+    update_cache: yes
+  become: yes
+
+- name: Create Collectd modules path
+  file: name={{ collectd_modules_path }} state=directory
+  become: yes
+
+- name: Get mysql module
+  copy: src=../files/mysql.py dest={{ collectd_modules_path }}/mysql.py
+  become: yes
+
+- name: Add mysql config in collectd
+  template: src=../templates/collectd.conf.d/mysql.conf dest=/etc/collectd/collectd.conf.d/mysql.conf
+  become: yes

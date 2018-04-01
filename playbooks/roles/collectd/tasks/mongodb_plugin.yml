@@ -1,0 +1,20 @@
+---
+- name: Install pymongo
+  pip: name=pymongo version=3.3.0
+  become: yes
+
+- name: Create Collectd modules path
+  file: name={{ collectd_modules_path }} state=directory
+  become: yes
+
+- name: Get mongodb module
+  get_url: url=https://raw.githubusercontent.com/Influans/collectd-mongodb/0.28.0/mongodb.py dest={{ collectd_modules_path }}/mongodb{{ internal_mongo_port }}.py
+  become: yes
+
+- name: Get mongodb types for collectd
+  get_url: url=https://raw.githubusercontent.com/Influans/collectd-mongodb/0.28.0/types.db dest=/etc/collectd/mongo_types.db
+  become: yes
+
+- name: Add mongodb config in collectd
+  template: src=collectd.conf.d/collectd-mongodb.conf dest=/etc/collectd/collectd.conf.d/mongo-{{ internal_mongo_port }}.conf
+  become: yes

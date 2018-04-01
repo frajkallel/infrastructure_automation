@@ -40,6 +40,14 @@
    - ::1
    - localhost
 
+- name: nagios mysql account
+  mysql_user:
+    name: "{{ nagios_username }}"
+    password: "{{ nagios_pwd }}"
+    priv: "*.*:USAGE,REPLICATION CLIENT,PROCESS"
+    state: present
+  when: not mysql_group_replication_deployment
+
 - name: Copy Mysql config
   copy: src=../files/mysqld.cnf dest=/etc/mysql/mysql.conf.d/mysqld.cnf mode=0644 owner=root group=root
 
