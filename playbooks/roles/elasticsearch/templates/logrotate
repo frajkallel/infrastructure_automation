@@ -1,0 +1,11 @@
+{{ elasticsearch_logs_dir }}/*.log
+{{ elasticsearch_logs_dir }}/*.txt
+{{ elasticsearch_logs_dir }}/*.out
+{
+    daily
+    missingok
+    copytruncate
+    rotate 4
+    compress
+    notifempty
+}

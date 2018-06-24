@@ -1,0 +1,5 @@
+elasticsearch_http_port: 9200
+elasticsearch_cluster_name: ibtek
+elasticsearch_data_dir: /var/lib/elasticsearch/data
+elasticsearch_logs_dir: /var/log/elasticsearch
+elasticsearch_minimum_master_nodes: 2

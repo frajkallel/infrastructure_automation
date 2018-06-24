@@ -1,0 +1,39 @@
+#https://dzone.com/articles/elasticsearch-tutorial-creating-an-elasticsearch-c
+---
+- name: Install public apt key
+  apt_key: url=https://packages.elastic.co/GPG-KEY-elasticsearch state=present
+  become: yes
+
+- name: Add apt repository
+  shell : echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-6.x.list
+  become: yes
+
+- name: Install Elasticsearch
+  apt: name={{ item }} state=present update_cache=yes
+  with_items:
+    - apt-transport-https
+    - elasticsearch
+  become: yes
+
+- name: Configure elasticsearch
+  template: src=elasticsearch.yml.j2 dest=/etc/elasticsearch/elasticsearch.yml
+  become: yes
+
+- name: Configure jvm for elasticsearch
+  template: src=jvm.options dest=/etc/elasticsearch/jvm.options
+  become: yes
+
+- name: Configure elasticsearch
+  template: src=etc/default/elasticsearch dest=/etc/default/elasticsearch
+  become: yes
+
+- name: Create Data dirictory
+  file: path={{ elasticsearch_data_dir }} state=directory owner=elasticsearch group=elasticsearch
+  become: yes
+
+- name: Launch Elasticsearch service
+  service: name=elasticsearch state=restarted enabled=yes
+  become: yes
+
+- name: Wait for elasticsearch to accept connection
+  wait_for: port={{ elasticsearch_http_port }} host={{ ansible_ssh_host }} state=present

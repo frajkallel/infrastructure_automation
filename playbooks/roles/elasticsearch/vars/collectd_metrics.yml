@@ -1,0 +1,159 @@
+collectd:
+  - name: es
+    url: http://{{ elasticsearch_bind_address }}:9200/_nodes/_local/stats
+    instance: es
+    metrics:
+      - key: nodes/*/indices/docs/count
+        instance: indices.docs.count
+        type: gauge
+      - key: nodes/*/indices/docs/deleted
+        instance: indices.docs.deleted
+        type: gauge
+      - key: nodes/*/indices/store/size_in_bytes
+        instance: indices.store.size_in_bytes
+        type: gauge
+      - key: nodes/*/indices/store/throttle_time_in_millis
+        instance: indices.store.throttle_time_in_millis
+        type: gauge
+      - key: nodes/*/indices/indexing/index_total
+        instance: indices.indexing.index_total
+        type: gauge
+      - key: nodes/*/indices/indexing/index_time_in_millis
+        instance: indices.indexing.index_time_in_millis
+        type: gauge
+      - key: nodes/*/indices/indexing/index_current
+        instance: indices.indexing.index_current
+        type: gauge
+      - key: nodes/*/indices/get/total
+        instance: indices.get.total
+        type: gauge
+      - key: nodes/*/indices/get/time_in_millis
+        instance: indices.get.time_in_millis
+        type: gauge
+      - key: nodes/*/indices/search/query_total
+        instance: indices.search.query_total
+        type: gauge
+      - key: nodes/*/indices/search/query_time_in_millis
+        instance: indices.search.query_time_in_millis
+        type: gauge
+      - key: nodes/*/indices/merges/total
+        instance: indices.merges.total
+        type: gauge
+      - key: nodes/*/indices/merges/total_time_in_millis
+        instance: indices.merges.total_time_in_millis
+        type: gauge
+      - key: nodes/*/indices/fielddata/memory_size_in_bytes
+        instance: indices.fielddata.memory_size_in_bytes
+        type: gauge
+      - key: nodes/*/indices/fielddata/evictions
+        instance: indices.fielddata.evictions
+        type: gauge
+      - key: nodes/*/indices/query_cache/memory_size_in_bytes
+        instance: indices.query_cache.memory_size_in_bytes
+        type: gauge
+      - key: nodes/*/indices/query_cache/evictions
+        instance: indices.query_cache.evictions
+        type: gauge
+      - key: nodes/*/indices/segments/count
+        instance: indices.segments.count
+        type: gauge
+      - key: nodes/*/indices/segments/memory_in_bytes
+        instance: indices.segments.memory_in_bytes
+        type: gauge
+      - key: nodes/*/indices/segments/terms_memory_in_bytes
+        instance: indices.segments.terms_memory_in_bytes
+        type: gauge
+      - key: nodes/*/indices/segments/stored_fields_memory_in_bytes
+        instance: indices.segments.stored_fields_memory_in_bytes
+        type: gauge
+      - key: nodes/*/indices/segments/term_vectors_memory_in_bytes
+        instance: indices.segments.term_vectors_memory_in_bytes
+        type: gauge
+      - key: nodes/*/indices/segments/norms_memory_in_bytes
+        instance: indices.segments.norms_memory_in_bytes
+        type: gauge
+      - key: nodes/*/indices/segments/doc_values_memory_in_bytes
+        instance: indices.segments.doc_values_memory_in_bytes
+        type: gauge
+      - key: nodes/*/indices/segments/index_writer_memory_in_bytes
+        instance: indices.segments.index_writer_memory_in_bytes
+        type: gauge
+      - key: nodes/*/indices/segments/index_writer_max_memory_in_bytes
+        instance: indices.segments.index_writer_max_memory_in_bytes
+        type: gauge
+      - key: nodes/*/indices/segments/version_map_memory_in_bytes
+        instance: indices.segments.version_map_memory_in_bytes
+        type: gauge
+      - key: nodes/*/indices/segments/fixed_bit_set_memory_in_bytes
+        instance: indices.segments.fixed_bit_set_memory_in_bytes
+        type: gauge
+      - key: nodes/*/process/cpu/percent
+        instance: process.cpu.percent
+        type: gauge
+      - key: nodes/*/process/cpu/total_in_millis
+        instance: process.cpu.total_in_millis
+        type: gauge
+      - key: nodes/*/process/mem/resident_in_bytes
+        instance: process.mem.resident_in_bytes
+        type: gauge
+      - key: nodes/*/process/mem/share_in_bytes
+        instance: process.mem.share_in_bytes
+        type: gauge
+      - key: nodes/*/process/mem/total_virtual_in_bytes
+        instance: process.mem.total_virtual_in_bytes
+        type: gauge
+      - key: nodes/*/jvm/mem/heap_used_in_bytes
+        instance: jvm.mem.heap_used_in_bytes
+        type: gauge
+      - key: nodes/*/jvm/mem/heap_used_percent
+        instance: jvm.mem.heap_used_percent
+        type: gauge
+      - key: nodes/*/jvm/mem/heap_committed_in_bytes
+        instance: jvm.mem.heap_committed_in_bytes
+        type: gauge
+      - key: nodes/*/jvm/mem/heap_max_in_bytes
+        instance: jvm.mem.heap_max_in_bytes
+        type: gauge
+      - key: nodes/*/jvm/mem/non_heap_used_in_bytes
+        instance: jvm.mem.non_heap_used_in_bytes
+        type: gauge
+      - key: nodes/*/jvm/mem/non_heap_committed_in_bytes
+        instance: jvm.mem.non_heap_committed_in_bytes
+        type: gauge
+      - key: nodes/*/jvm/threads/count
+        instance: jvm.threads.count
+        type: gauge
+      - key: nodes/*/fs/total/disk_read_size_in_bytes
+        instance: fs.total.disk_read_size_in_bytes
+        type: gauge
+      - key: nodes/*/fs/total/disk_write_size_in_bytes
+        instance: fs.total.disk_write_size_in_bytes
+        type: gauge
+      - key: nodes/*/fs/total/disk_io_size_in_bytes
+        instance: fs.total.disk_io_size_in_bytes
+        type: gauge
+      - key: nodes/*/breakers/fielddata/estimated_size_in_bytes
+        instance: fielddata_breaker.estimated_size_in_bytes
+        type: gauge
+      - key: nodes/*/breakers/fielddata/limit_size_in_bytes
+        instance: fielddata_breaker.maximum_size_in_bytes
+        type: gauge
+      - key: nodes/*/breakers/fielddata/tripped
+        instance: fielddata_breaker.tripped
+        type: gauge
+      - key: nodes/*/breakers/parent/estimated_size_in_bytes
+        instance: parent_breaker.estimated_size_in_bytes
+        type: gauge
+      - key: nodes/*/breakers/parent/limit_size_in_bytes
+        instance: parent_breaker.maximum_size_in_bytes
+        type: gauge
+      - key: nodes/*/breakers/parent/tripped
+        instance: parent_breaker.tripped
+        type: gauge
+  - name: es-cluster
+    url: http://{{ elasticsearch_bind_address }}:9200/_cluster/health
+    instance: es-cluster
+    metrics:
+      - key: unassigned_shards
+        instance: unassigned_shards.count
+        type: gauge
