@@ -1,7 +1,6 @@
-
 var cfg = { _id: 'rs0',
    members: [
-    {% for host in groups['mongo'] %}{ _id: {{ hostvars[host].node_server_id }} , host: '{{ hostvars[host].ansible_ssh_host }}:27017'}{% if not loop.last %},{% endif %}{% endfor %}    
+    {% for host in groups['mongo'] %}{ _id: {{ hostvars[host].node_server_id }} , host: '{{ hostvars[host].ansible_host }}:27017'   {% if hostvars[host].is_arbiter == 'true' %}, arbiterOnly: true {% endif %}}{% if not loop.last %},{% endif %}{% endfor %}    
    ]
 };
 

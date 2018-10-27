@@ -40,14 +40,13 @@
   become: yes
   ignore_errors: yes 
 
-- name: update config file mongod.conf
-  template:
-    src: templates/mongod.conf
-    dest: /etc/mongod.conf
+- name: update bindip
+  lineinfile:
+    path: /etc/mongod.conf
+    regexp: '^  bindIp:'
+    line: '  bindIp: 0.0.0.0'
   become: yes
-  when: (check_repl_result.rc == 1) and (check_standalone_result.rc == 1) 
-  tags:
-    - admin 
+  when: (check_repl_result.rc == 1) and (check_standalone_result.rc == 1)
 
 - name: start mongod service
   service:
@@ -67,21 +66,22 @@
     src: templates/admin.js.j2
     dest: /tmp/admin.js
   become: yes
-  when: check_repl_result.rc == 1
+  when: node_server_id == 1
 
 - name: config admin user
   command: mongo localhost:27017 /tmp/admin.js
   become: yes
-  when: (check_repl_result.rc == 1) and (check_standalone_result.rc == 1) 
+  when: (check_repl_result.rc == 1) and (check_standalone_result.rc == 1) and (node_server_id == 1) 
 
 - name: test access with admin user
   command: mongo -u{{ mongo_user }} -p{{ mongo_pwd }} --authenticationDatabase admin
+  when: node_server_id == 1
   register: mongo_auth
 
 - name: failed access with admin
   fail:
     msg: "PB authentication"
-  when: mongo_auth.failed
+  when: node_server_id == 1 and mongo_auth.failed
 
 - name: add authorization enabled
   blockinfile:
@@ -151,17 +151,17 @@
     src: templates/replica.js.j2
     dest: /tmp/replica.js
   become: yes
-  when: (node_server_id == 1) and (mongo_replicaset_setup)
+  when: (node_server_id is defined and node_server_id == 1) and (mongo_replicaset_setup)
 
 - name: sleep for 30 seconds and continue with play
   wait_for: timeout=30
-  when: (node_server_id == 1) and (mongo_replicaset_setup)
+  when: (node_server_id is defined and node_server_id == 1) and (mongo_replicaset_setup)
 
 
 - name: config replica set
   command: mongo localhost:27017/admin -u{{ mongo_user }} -p{{ mongo_pwd }} --authenticationDatabase admin /tmp/replica.js
   become: yes
-  when: (node_server_id == 1) and (mongo_replicaset_setup) and (check_repl_result.rc == 1 )
+  when: (node_server_id is defined and node_server_id == 1) and (mongo_replicaset_setup) and (check_repl_result.rc == 1 )
   tags:
     - rep
 
