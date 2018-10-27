@@ -1,0 +1,107 @@
+# vim: set filetype=yaml expandtab tabstop=2 shiftwidth=2 softtabstop=2 background=dark :
+
+# this rpm is also available on github.. but when multiple servers start to download 
+# the same file from github simultanneously, github will likely block you
+# and the role will fail
+# that's why it's embedded in the role
+
+# - name: select proper PAF package (centos6)
+#   set_fact:
+#     paf_pkg: 'resource-agents-paf_2.1.0-1_all.deb'
+
+# - name: copy PAF rpm to hosts
+#   copy: src="{{ paf_pkg }}" dest="/tmp/{{ paf_pkg }}"
+
+# - name: install PAF DB failover agent
+#   shell: dpkg -i /tmp/{{ paf_pkg }} 
+
+- name: install paf
+  apt:
+    name: '{{ item }}'
+    state: present
+    update_cache: yes
+  with_items:
+    - resource-agents-paf
+    
+
+#- name: apply geo-HA patches to DB failover agent
+#  copy: src=pgsqlms dest=/usr/lib/ocf/resource.d/heartbeat/pgsqlms
+#  args:
+#    owner: root
+#    group: root
+#    mode:  0555
+
+- name: prepare DB recovery config
+  template: src=recovery.conf.pcmk.j2 dest="{{ postgres_ha_pg_confdir }}/recovery.conf.{{postgres_ha_cluster_name}}.pcmk"
+  args:
+    owner: postgres
+    group: postgres
+    mode:  0600
+
+- name: stop database for clustering
+  service: name="{{ postgres_ha_pg_systemd_svcname }}" state=stopped enabled=false
+
+- name: create database cluster resource
+  shell: pcs resource create "{{ postgres_ha_cluster_pg_res_name }}" ocf:heartbeat:pgsqlms \
+          datadir="{{ postgres_ha_pg_data }}" \
+          pgdata="{{ postgres_ha_pg_confdir }}" \
+          pgport="{{ postgres_ha_pg_port }}" \
+          bindir="{{ postgres_ha_pg_bindir }}" \
+          recovery_template="{{ postgres_ha_pg_confdir }}/recovery.conf.{{postgres_ha_cluster_name}}.pcmk" \
+          pghost="/var/run/postgresql" \
+          op start timeout=60s \
+          op stop timeout=60s  \
+          op promote timeout=30s \
+          op demote timeout=120s \
+          op notify timeout=60s  \
+          op monitor interval=15s role="Master" timeout=10s \
+          op monitor interval=16s role="Slave" timeout=10s
+  
+  # pcs_resource: command=create resource_id="{{ postgres_ha_cluster_pg_res_name }}" type=ocf:heartbeat:pgsqlms
+  # args:
+  #   disabled: True
+  #   options:
+  #     bindir: "{{ postgres_ha_pg_bindir }}"
+  #     pgdata: "{{ postgres_ha_pg_data }}"
+  #     pgport: "{{ postgres_ha_pg_port }}"
+  #     recovery_template: "{{ postgres_ha_pg_confdir }}/recovery.conf.{{postgres_ha_cluster_name}}.pcmk"
+  #   operations:
+  #     - action: start
+  #       options:
+  #         timeout: 60s
+  #     - action: stop
+  #       options:
+  #         timeout: 60s
+  #     - action: promote
+  #       options:
+  #         timeout: 30s
+  #     - action: demote
+  #       options:
+  #         timeout: 120s
+  #     - action: notify
+  #       options:
+  #         timeout: 60s
+  #     - action: monitor
+  #       options:
+  #         interval: "{{ postgres_ha_monitor_interval_pgmaster }}"
+  #         timeout: 10s
+  #         role: Master
+  #     - action: monitor
+  #       options:
+  #         interval: "{{ postgres_ha_monitor_interval_pgslave }}"
+  #         timeout: 10s
+  #         role: Slave
+  when: inventory_hostname == postgres_ha_cluster_master_host    # run only on one node
+
+- name: create master DB resource
+  shell: pcs resource master "{{ postgres_ha_cluster_pg_HA_res_name }}" "{{ postgres_ha_cluster_pg_res_name }}" notify=true 
+  # shell: pcs resource master postgres-ha postgres master-node-max="1" master-max="1" clone-max="2" notify="true" clone-node-max="1" --disabled
+  # pcs_resource: command=master resource_id="{{ postgres_ha_cluster_pg_HA_res_name }}" ms_name="{{ postgres_ha_cluster_pg_res_name }}" disabled=True
+  # args:
+  #   options:
+  #     master-max      : 1
+  #     master-node-max : 1
+  #     clone-max       : "{{ ansible_play_batch|length }}"
+  #     clone-node-max  : 1
+  #     notify          : true
+  when: inventory_hostname == postgres_ha_cluster_master_host    # run only on one node

@@ -1,0 +1,124 @@
+# vim: set filetype=yaml expandtab tabstop=2 shiftwidth=2 softtabstop=2 background=dark :
+
+- debug: msg='cluster_members={{ansible_play_batch}}'
+  run_once: true
+
+- name: install cluster pkgs
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  with_items:
+    - pcs
+    - pacemaker
+    - fence-agents
+
+- name: "Build hosts file"
+  lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_ssh_host }} {{ item }}" state=present
+  when: hostvars[item].ansible_ssh_host is defined
+  with_items: "{{ ansible_play_batch }}"
+
+# For each host add hostnames for all postgres_ha_network_rings interfaces to /etc/hosts
+# example output: "10.10.90.200 myhost-ring1"
+- name: add additional network rings to hosts file
+  lineinfile: dest=/etc/hosts regexp='.*{{ item[0] }}-{{ item[1] }}$' line="{{ hostvars[item[0]][['ansible_', postgres_ha_network_rings[item[1]]]|join]['ipv4']['address'] }} {{ item[0] }}-{{ item[1] }}" state=present
+  with_nested:
+    - "{{ ansible_play_batch }}"
+    - "{{ postgres_ha_network_rings }}"
+  when: postgres_ha_network_rings and
+        hostvars[item[0]][['ansible_', postgres_ha_network_rings[item[1]]]|join] is defined
+
+# create hostname string for "pcs cluster" command that lists also all ring hostnames (if exist)
+# example: "node01,node01-ring1"
+# (the lowest element (e.g. "ring0") is omitted in the first name and the actual inventory_hostname is used as a default name)
+- name: generate pcs hostname string
+  set_fact:
+    pcs_hostname: "{{ inventory_hostname }}{% if postgres_ha_network_rings %}{% for ring in postgres_ha_network_rings|difference(postgres_ha_network_rings|min)|sort %},{{ inventory_hostname }}-{{ ring }}{% endfor %}{% endif %}"
+
+# output: "--addr0 net.work.ip.addr --addr1 other.net.ip.addr ..."
+- name: compute mcast addr settings
+  set_fact:
+    pcs_ring_addrs: "{% set ring_num = 0 %}{% if postgres_ha_network_rings %}{% for ring in postgres_ha_network_rings|sort %}--addr{{ ring_num }} {{ hostvars[inventory_hostname][['ansible_', postgres_ha_network_rings[ring]]|join]['ipv4']['network'] }} {% set ring_num = ring_num + 1 %}{% endfor %}{% endif %}"
+  when: postgres_ha_mcast_enable
+
+- name: enable GUI if required
+  lineinfile: dest=/etc/default/pcsd regexp='^PCSD_DISABLE_GUI=' line="PCSD_DISABLE_GUI={% if postgres_ha_gui_enable %}false{% else %}true{% endif %}" state=present
+
+- name: service pcsd start                         
+  service: name=pcsd state=started enabled=yes
+
+- name: setup hacluster password
+  user:
+    name: hacluster
+    state: present
+    update_password: always
+    password: "{{ postgres_ha_cluster_ha_password_hash }}"
+
+- name: stop corosync
+  service: name=corosync state=stopped
+
+- name: delete /etc/corosync/corosync.conf
+  file:
+    path: /etc/corosync/corosync.conf
+    state: absent
+  
+
+- name: setup cluster auth
+  shell: pcs cluster auth {{ ansible_play_batch | join( " ") }} -u hacluster -p "{{ postgres_ha_cluster_ha_password }}"
+
+# We create cluster in two steps:
+# 1. create one-node cluster
+# 2. join other cluster nodes (the task below)
+# The reason is that we want to support adding new nodes by re-running the role.
+- name: create cluster
+  shell: pcs cluster setup --force --name {{ postgres_ha_cluster_name }} {{ ansible_play_batch | join( " ") }}
+  # args:
+  #   creates: /etc/corosync/corosync.conf
+  when: inventory_hostname == postgres_ha_cluster_master_host   # run only on master node
+
+# start cluster on every node separately (can be run multiple times without failure)
+- name: start cluster
+  shell: pcs cluster start
+  
+  #args:
+  # creates: /var/lib/pacemaker/cib/cib.xml
+
+
+- name: restart corosync
+  service: name=corosync state=started
+
+# restart corosync if needed
+- meta: flush_handlers
+
+#- name: query cluster status
+#  shell: pcs cluster status
+#  #register: cluster_state
+#  #failed_when: True
+
+# - name: set migration-threshold
+#   shell: pcs resource defaults migration-threshold=5
+#   run_once: true
+
+# - name: set resource-stickiness
+#   shell: pcs resource defaults resource-stickiness=10
+#   run_once: true
+
+- name: alter stonith settings
+  shell: pcs property set stonith-enabled=false
+  # pcs_property: name=stonith-enabled value=false
+  run_once: true
+
+- name: ignore quorum
+  shell: pcs property set no-quorum-policy=ignore
+  run_once: true
+
+- name: verify cluster configuration
+  shell: crm_verify -L -V
+  run_once: true
+
+- name: enable cluster autostart
+  shell: pcs cluster enable
+
+# reload corosync if neccessary (done automatically on the end of the tasklist)
+#- meta: flush_handlers
+

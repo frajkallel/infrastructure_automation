@@ -1,0 +1,66 @@
+---
+# cluster config
+postgres_ha_cluster_master_host: "{{ ansible_play_batch[0] }}"     # sync all DB slaves from this master node (set to first node if not defined)
+postgres_ha_cluster_name: 'pgcluster'                      # name of the pcs cluster
+postgres_ha_cluster_vip:  10.20.30.40                      # floating IP that will be used to connect to clustered DB (always follows the master)
+postgres_ha_cluster_vip_mask: 24                           # floating IP netmask
+postgres_ha_cluster_vip_res_name:  'pg-vip'                # resource name of the floating IP
+postgres_ha_cluster_pg_res_name: 'postgres'                # slave DB cluster resource name
+postgres_ha_cluster_pg_HA_res_name: 'postgres-ha'          # master DB cluster resource name (this name is used to manage postgres resource)
+postgres_ha_pg_port:  5432
+
+postgres_ha_monitor_interval_pgmaster: '15s'               # frequency of checking if master PG instance is alive
+postgres_ha_monitor_interval_pgslave: '16s'                # frequency of checking if slave PG instance is alive
+
+# auth config
+postgres_ha_pg_repl_user: replicator                       # database user used for replication
+postgres_ha_pg_repl_pass: rybKath3KeckGov1
+postgres_ha_cluster_ha_password: 'fropFav7epAbOch2'        # password for joining the pcs cluster
+postgres_ha_cluster_ha_password_hash: '$6$MHAki4YS$Nk7O3FEC2G.INznoSUj4ByFgdwFJ8mcI9.Ks3XAoLLe9f9GB36G8hZe9o8ygDySJwvnLVCn0LGPzcOapK42/A/'  # fropFav7epAbOch2
+
+# postgres config
+postgres_ha_pg_version: 10
+#postgres_ha_import_repo: true                               # Enable download of postgresql repo before install
+#postgres_ha_repo_url: 'https://download.postgresql.org/pub/repos/yum/{{ postgres_ha_pg_version }}/redhat/rhel-7-x86_64/{{ pg_pkg_name }}'
+postgres_ha_pg_systemd_svcname: "postgresql"   # the name of the original posgres DB resource in systemd
+postgres_ha_pg_data: "/var/lib/postgresql/10/main"     # where can I find PG datadir?
+postgres_ha_pg_bindir: "/usr/lib/postgresql/10/bin"        # where are the PG binaries?
+postgres_ha_pg_confdir: "/etc/postgresql/10/main"
+postgres_ha_postgresql_conf_vars:                          # When altering this variable, please copy all postgresql.conf items specified here \
+    listen_addresses: "'*'"                                     # because this whole variable will be overloaded by your new definition. \
+    max_wal_senders: "{{ ansible_play_batch|length * 2 }}"      # You can change also other postgresql.conf variables here, it will work.
+    max_replication_slots: "{{ ansible_play_batch|length * 2 }}"
+    wal_level: "replica"
+    hot_standby: "on"
+    wal_log_hints: "on"
+    hot_standby_feedback: "on"
+    logging_collector: "on"
+    log_directory: "log"
+
+# postgres_ha_postgresql_conf_slave_vars:                          
+#     listen_addresses: "'*'"
+#     max_wal_senders: "{{ ansible_play_batch|length * 2 }}"
+#     hot_standby: "on"
+#     hot_standby_feedback: "on"
+
+
+postgres_ha_maint_scripts_path: /var/lib/postgresql/pg-maint    # location where to create user scripts for database administration
+
+postgres_ha_network_rings:                                 # Use multiple networks for cluster interconnection. Defaults to primary NIC.
+#    ring0: "eth0"                                         # Primary network. The "lowest" string (ASCII compare) will be selected as the primary network ring.
+    ring1: "eth1"                                         # Additional network. You can use any names instead of "ring*". These will be appended to a hostname.
+
+postgres_ha_mcast_enable: False                            # Enable cluster communication using multicast (sets transport=udp, rrpmode=passive). \
+                                                                # For mcast to work, you need to set postgres_ha_network_rings. \
+                                                                # Centos6: It is recommended to enable multicast. You need at least 2 postgres_ha_network_rings.
+
+postgres_ha_pcs_advanced_params:                           # Additional parameters for "pcs cluster setup" command.
+#    token: 1000
+#    mcast0: '239.255.1.1'                                 # these are the default mcast addresses for the respective cluster network rings
+#    mcast1: '255.239.2.1'
+#    mcastport0: 5405
+#    mcastport1: 5405
+#Ignored params: 'addr0', 'addr1', 'addr2', 'addr3', 'transport' (they are set by postgres_ha_mcast_enable)
+
+postgres_ha_gui_enable: False                              # enable GUI on all hosts (one host is sufficient for GUI to work \
+                                                                # but when it goes down, you loose the GUI) on https port 2224

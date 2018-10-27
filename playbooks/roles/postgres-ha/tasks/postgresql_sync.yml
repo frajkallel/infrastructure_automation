@@ -1,0 +1,242 @@
+# vim: set filetype=yaml expandtab tabstop=2 shiftwidth=2 softtabstop=2 background=dark :
+
+# The name of the rpm file that imports the pg repo depends on the OS family and on the pg version.
+# This variable sets the last version digit of the repo file (e.g 9.6-3).
+- name: Add an Apt signing key
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+  
+# Add specified repository into sources list.
+- apt_repository:
+    repo: deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main
+    state: present
+
+- name: install postgresql 10
+  apt:
+    name: '{{ item }}'
+    state: present
+    update_cache: yes
+  with_items:
+    - postgresql
+    - postgresql-client
+    - python-psycopg2
+
+
+ 
+# if the file does not exist, DB sync is needed
+- name: check if DB was synchronized before
+  stat: path="{{ postgres_ha_pg_data }}/.synchronized"
+  register: db_prevsync_file
+
+- name: alter clustering-related settings in postgresql.conf
+  replace: 
+    dest="{{ postgres_ha_pg_confdir }}/postgresql.conf"
+    regexp="^([# ]*{{ item.key }} *=.*$)"
+    replace="{{ item.key }} = {{ item.value }}"
+  # when: inventory_hostname == postgres_ha_cluster_master_host   # run only on master node
+  with_dict: "{{ postgres_ha_postgresql_conf_vars }}"
+  notify: restart postgresql
+
+# - name: alter clustering-related settings in slaves postgresql.conf
+#   replace: 
+#     dest="{{ postgres_ha_pg_confdir }}/postgresql.conf"
+#     regexp="^([# ]*{{ item.key }} *=.*$)"
+#     replace="{{ item.key }} = {{ item.value }}"
+#   when: inventory_hostname != postgres_ha_cluster_master_host   # run only on master node
+#   with_dict: "{{ postgres_ha_postgresql_conf_slave_vars }}"
+#   notify: restart postgresql
+
+- meta: flush_handlers
+
+- name: alter DB ACL in pg_hba.conf
+  lineinfile: dest="{{ postgres_ha_pg_confdir }}/pg_hba.conf"
+    regexp='^host    postgres .*{{ hostvars[item].ansible_ssh_host }}/32'
+    insertbefore='^host'
+    line='host    postgres       {{ postgres_ha_pg_repl_user }}    {{ hostvars[item].ansible_ssh_host }}/32          md5'
+  with_items: "{{ ansible_play_batch }}"
+  when: inventory_hostname == postgres_ha_cluster_master_host or
+        db_prevsync_file.stat.exists
+        # run only on master node or on synchronized slave
+  register: alter_pg_acl
+
+- name: alter DB replication ACL in pg_hba.conf on master
+  lineinfile: dest="{{ postgres_ha_pg_confdir }}/pg_hba.conf"
+    regexp='^host    replication .*{{ hostvars[item].ansible_ssh_host }}/32'
+    insertbefore='^host'
+    line='host    replication     {{ postgres_ha_pg_repl_user }}    {{ hostvars[item].ansible_ssh_host }}/32          {% if item == inventory_hostname %}reject{% else %}md5{% endif %}'
+  with_items: "{{ ansible_play_batch }}"
+  when: inventory_hostname == postgres_ha_cluster_master_host or
+        db_prevsync_file.stat.exists
+        # run only on master node or on synchronized slave
+  register: alter_repl_acl
+
+#hostname:port:database:username:password
+- name: setup DB cluster auth (master IP)
+  lineinfile: dest="~postgres/.pgpass" line="{{ postgres_ha_cluster_vip }}:{{ postgres_ha_pg_port }}:replication:postgres:{{ postgres_ha_pg_repl_pass }}" state=present
+  args:
+    owner: postgres
+    group: postgres
+    mode:  0600
+    create: yes
+
+- name: setup .pgpass replication auth for master IP
+  lineinfile: dest="~postgres/.pgpass" line="{{ postgres_ha_cluster_vip }}:{{ postgres_ha_pg_port }}:replication:{{ postgres_ha_pg_repl_user }}:{{ postgres_ha_pg_repl_pass }}" state=present
+  args:
+    owner: postgres
+    group: postgres
+    mode:  0600
+    create: yes
+
+- name: setup .pgpass replication auth for other IPs
+  lineinfile: dest="~postgres/.pgpass" line="{{ hostvars[item].ansible_ssh_host }}:{{ postgres_ha_pg_port }}:replication:{{ postgres_ha_pg_repl_user }}:{{ postgres_ha_pg_repl_pass }}" state=present
+  with_items: "{{ansible_play_batch}}"
+  args:
+    owner: postgres
+    group: postgres
+    mode:  0600
+    create: yes
+
+- name: check if master host "{{ postgres_ha_cluster_master_host }}" is really a DB master
+  shell: psql -Aqtc "SELECT pg_is_in_recovery()"
+  when: inventory_hostname == postgres_ha_cluster_master_host    # run only on one node
+  become: yes
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+  register: is_slave
+  failed_when: is_slave.stdout == 't'
+
+- name: mark master DB
+  lineinfile: dest="{{ postgres_ha_pg_data }}/.synchronized" line="DO NOT REMOVE THIS FILE! Otherwise DB sync can go wrong." state=present
+  args:
+    owner: postgres
+    group: postgres
+    mode:  0600
+    create: yes
+  when: inventory_hostname == postgres_ha_cluster_master_host    # run only on one node
+  register: create_syncfile
+
+- name: check if DB is running (failure is ok)
+  #shell: /bin/sh -c 'if {{ postgres_ha_pg_bindir }}/pg_ctl -D "{{ postgres_ha_pg_data }}" status &> /dev/null; then echo True; else echo False; fi'
+  shell: "{{ postgres_ha_pg_bindir }}/pg_ctl -D /etc/postgresql/10/main status"
+  register: db_running
+  become: yes
+  become_user: postgres
+  ignore_errors: True
+
+# check if the DB is already clustered
+# If the resource constraint already exists, it means that DB clustering was fully applied before
+# and the database should run only from cluster resource.
+
+- name: check if DB is running in cluster (failure is OK)
+  #shell: /bin/sh -c 'if pcs resource show "{{ postgres_ha_cluster_pg_HA_res_name }}" &> /dev/null; then echo True; else echo False; fi'
+  #shell: pcs resource show "{{ postgres_ha_cluster_pg_HA_res_name }}"
+  shell: pcs constraint location show resources "{{ postgres_ha_cluster_pg_HA_res_name }}" | grep -q Enabled
+  register: db_resource_exists
+  ignore_errors: True
+
+- name: reload DB ACLs
+  shell: "{{ postgres_ha_pg_bindir }}/pg_ctl -D /etc/postgresql/10/main reload"
+  become: yes
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+#  when: (alter_pg_acl.changed or alter_repl_acl.changed) and db_running is succeeded
+
+#- name: start master DB if necessary (without cluster)
+#  service: name="{{ postgres_ha_pg_systemd_svcname }}" state=started enabled=yes
+#  when: (inventory_hostname == postgres_ha_cluster_master_host) and
+#        (db_resource_exists is failed) and
+#        (db_running is failed)
+
+# if DB is clustered and is not running, we have a problem.. try at least cleaning the resource status
+- name: start master DB if necessary (in cluster)
+  shell: pcs resource cleanup "{{ postgres_ha_cluster_pg_HA_res_name }}" && sleep 15
+  when: (inventory_hostname == postgres_ha_cluster_master_host) and
+        (db_resource_exists is succeeded) and
+        (db_running is failed)
+
+- name: setup DB replication auth
+  postgresql_user:
+    name: "{{ postgres_ha_pg_repl_user }}"
+    state: present
+    port: "{{ postgres_ha_pg_port }}"
+    password: "{{ postgres_ha_pg_repl_pass }}"
+    encrypted: yes
+    role_attr_flags: SUPERUSER,LOGIN
+  become: yes
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+  when: inventory_hostname == postgres_ha_cluster_master_host    # run only on one node
+
+#- name: re-check DB datadir
+#  find: paths="{{ postgres_ha_pg_data }}"
+#  register: datadir_files
+
+# if the file does not exist, DB sync is needed
+- name: check if DB sync is required
+  stat: path="{{ postgres_ha_pg_data }}/.synchronized"
+  register: db_sync_file
+
+- name: stop slave DB
+  service: name="{{ postgres_ha_pg_systemd_svcname }}" state=stopped enabled=false
+  when: (not db_sync_file.stat.exists) and
+        (db_resource_exists is failed) and
+        (db_running is succeeded)
+
+- name: remove slave DB datadir before sync
+  file: state=absent path="{{ postgres_ha_pg_data }}"
+  #shell: rm -rf "{{ postgres_ha_pg_data }}" 
+  #args:
+  #  creates: "{{ postgres_ha_pg_data }}/.synchronized"     # will not delete if the file exists (means that DB is already synced)
+  when: not db_sync_file.stat.exists
+  register: delete_datadir
+
+# replicate slave node (assumes firewall is already setup)
+# run only on slave nodes and only when postgres datadir is empty
+- name: synchronize slave databases
+  shell: '{{ postgres_ha_pg_bindir }}/pg_basebackup -h "{{ hostvars[postgres_ha_cluster_master_host].ansible_ssh_host }}" -p {{ postgres_ha_pg_port }} -R -D "{{ postgres_ha_pg_data }}" -U "{{ postgres_ha_pg_repl_user }}" -v '
+  become: yes
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+  when: delete_datadir.changed or not db_sync_file.stat.exists
+  #when: (inventory_hostname != postgres_ha_cluster_master_host) and
+  #      (datadir_files.matched|int == 0)
+  register: slave_resync
+
+- name: forbid self-replication in pg_hba.conf on slaves
+  lineinfile: dest="{{ postgres_ha_pg_confdir }}/pg_hba.conf"
+    regexp='^host    replication .*{{ hostvars[item].ansible_ssh_host }}/32'
+    insertbefore='^host'
+    line='host    replication     {{ postgres_ha_pg_repl_user }}    {{ hostvars[item].ansible_ssh_host }}/32          {% if item == inventory_hostname %}reject{% else %}md5{% endif %}'
+  with_items: "{{ ansible_play_batch }}"
+  # run only on freshly synchronized slave
+  when: inventory_hostname != postgres_ha_cluster_master_host and slave_resync.changed
+
+# Pause ansible execution to manually correct the postgres sync if necessary
+#- name: Exterminate mankind
+#  pause: prompt='Please confirm you want to exterminate mankind! Press return to continue. Press Ctrl+c and then "a" to abort'
+
+- name: start slave DBs
+  service: name="{{ postgres_ha_pg_systemd_svcname }}" state=started enabled=yes
+  when: (inventory_hostname != postgres_ha_cluster_master_host) and
+        (db_resource_exists is failed) #and delete_datadir.changed
+
+- name: start slave DBs
+  service: name="{{ postgres_ha_pg_systemd_svcname }}" state=restarted 
+  when: (inventory_hostname != postgres_ha_cluster_master_host)
+
+- name: check if slaves are connected
+  shell: psql -Aqtc "SELECT count(*) FROM pg_stat_replication"
+  when: inventory_hostname == postgres_ha_cluster_master_host    # run only on one node
+  become: yes
+  become_user: postgres
+  register: slavecount
+  vars:
+    ansible_ssh_pipelining: true
+  until: (slavecount.stdout|string) == ((ansible_play_batch|length - 1)|string)
+  retries: 15
+  delay: 2
