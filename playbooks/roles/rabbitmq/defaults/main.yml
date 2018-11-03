@@ -1,0 +1,18 @@
+---
+rabbitmq_cluster: false
+rabbitmq_cluster_master: "rabbit@{{ hostvars[ansible_play_hosts.0].ansible_hostname }}"
+rabbitmq_erlang_cookie_file: /var/lib/rabbitmq/.erlang.cookie
+
+rabbitmq_plugins:
+  - rabbitmq_management
+
+rabbitmq_users:
+  - user: admin
+    password: admin
+    tags: administrator
+
+rabbitmq_users_absent:
+  - guest
+
+rabbitmq_vhosts: []
+rabbitmq_vhosts_absent: []
